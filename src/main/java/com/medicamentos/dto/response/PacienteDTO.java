@@ -15,6 +15,7 @@ public record PacienteDTO(
         String carreraArea,
         String cicloAcademico,
         String telefono,
+        Boolean activo,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {

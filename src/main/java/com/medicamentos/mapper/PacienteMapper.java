@@ -32,6 +32,7 @@ public class PacienteMapper {
                 paciente.getCarreraArea(),
                 paciente.getCicloAcademico(),
                 paciente.getTelefono(),
+                paciente.isActivo(),
                 paciente.getCreatedAt(),
                 paciente.getUpdatedAt()
         );

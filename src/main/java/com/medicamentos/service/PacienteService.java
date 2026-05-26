@@ -16,4 +16,6 @@ public interface PacienteService {
     PacienteDTO create(PacienteCreateDTO request);
 
     PacienteDTO update(Long id, PacienteCreateDTO request);
+
+    PacienteDTO toggleActivo(Long id);
 }
