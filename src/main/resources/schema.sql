@@ -1,12 +1,13 @@
 CREATE TABLE IF NOT EXISTS pacientes (
     id BIGSERIAL PRIMARY KEY,
-    dni VARCHAR(15) NOT NULL UNIQUE,
+    tipo_documento VARCHAR(25) NOT NULL DEFAULT 'DNI',
+    dni VARCHAR(20) NOT NULL UNIQUE,
     nombres_apellidos VARCHAR(150) NOT NULL,
     edad INTEGER,
     sexo VARCHAR(20),
     carrera_area VARCHAR(150),
     ciclo_academico VARCHAR(30),
-    telefono VARCHAR(20),
+    telefono VARCHAR(15),
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL
 );

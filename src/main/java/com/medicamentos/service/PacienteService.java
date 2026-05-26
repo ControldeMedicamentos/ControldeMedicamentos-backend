@@ -11,7 +11,9 @@ public interface PacienteService {
 
     PacienteDTO findById(Long id);
 
-    PacienteDTO findByDni(String dni);
+    PacienteDTO findByNroDocumento(String nroDocumento);
 
     PacienteDTO create(PacienteCreateDTO request);
+
+    PacienteDTO update(Long id, PacienteCreateDTO request);
 }

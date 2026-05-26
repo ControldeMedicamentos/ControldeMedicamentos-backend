@@ -15,7 +15,7 @@ public class AtencionMapper {
         return new AtencionDTO(
                 atencion.getId(),
                 atencion.getPaciente().getId(),
-                atencion.getPaciente().getDni(),
+                atencion.getPaciente().getNroDocumento(),
                 atencion.getPaciente().getNombresApellidos(),
                 atencion.getFechaEvaluacion(),
                 atencion.getMotivo(),
