@@ -63,6 +63,17 @@ public class InventarioServiceImpl implements InventarioService {
     }
 
     @Override
+    public InventarioDTO update(Long id, InventarioCreateDTO request) {
+        Inventario inventario = inventarioRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Lote no encontrado: " + id));
+        inventario.setStockActual(request.stockActual());
+        inventario.setStockMinimo(request.stockMinimo());
+        inventario.setLote(request.lote());
+        inventario.setFechaVencimiento(request.fechaVencimiento());
+        return inventarioMapper.toDTO(inventarioRepository.save(inventario));
+    }
+
+    @Override
     @Transactional
     public MovimientoInventario descontarStock(Long medicamentoId, Integer cantidad) {
         return descontarStock(medicamentoId, cantidad, null, null, "SISTEMA");

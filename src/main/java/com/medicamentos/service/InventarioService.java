@@ -18,6 +18,8 @@ public interface InventarioService {
 
     InventarioDTO create(InventarioCreateDTO request);
 
+    InventarioDTO update(Long id, InventarioCreateDTO request);
+
     MovimientoInventario descontarStock(Long medicamentoId, Integer cantidad);
 
     MovimientoInventario descontarStock(
