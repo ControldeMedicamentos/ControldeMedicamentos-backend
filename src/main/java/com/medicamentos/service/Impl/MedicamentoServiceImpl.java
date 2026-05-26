@@ -45,4 +45,33 @@ public class MedicamentoServiceImpl implements MedicamentoService {
         }
         return medicamentoMapper.toDTO(medicamentoRepository.save(medicamentoMapper.toEntity(request)));
     }
+
+    @Override
+    public MedicamentoDTO update(Long id, MedicamentoCreateDTO request) {
+        var medicamento = medicamentoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Medicamento no encontrado: " + id));
+
+        if (!medicamento.getCodigoSismed().equals(request.codigoSismed())
+                && medicamentoRepository.existsByCodigoSismed(request.codigoSismed())) {
+            throw new DuplicateResourceException("Ya existe un medicamento con codigo SISMED: " + request.codigoSismed());
+        }
+
+        medicamento.setCodigoSismed(request.codigoSismed());
+        medicamento.setCodigoSiga(request.codigoSiga());
+        medicamento.setDescripcionSismed(request.descripcionSismed());
+        medicamento.setPresentacionFrasco(request.presentacionFrasco());
+        medicamento.setDescripcionCorta(request.descripcionCorta());
+        medicamento.setConversion(request.conversion() == null ? 1 : request.conversion());
+        medicamento.setActivo(request.activo() == null || request.activo());
+
+        return medicamentoMapper.toDTO(medicamentoRepository.save(medicamento));
+    }
+
+    @Override
+    public MedicamentoDTO toggleActivo(Long id) {
+        var medicamento = medicamentoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Medicamento no encontrado: " + id));
+        medicamento.setActivo(!medicamento.getActivo());
+        return medicamentoMapper.toDTO(medicamentoRepository.save(medicamento));
+    }
 }

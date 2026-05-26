@@ -14,4 +14,8 @@ public interface MedicamentoService {
     MedicamentoDTO findByCodigoSismed(String codigoSismed);
 
     MedicamentoDTO create(MedicamentoCreateDTO request);
+
+    MedicamentoDTO update(Long id, MedicamentoCreateDTO request);
+
+    MedicamentoDTO toggleActivo(Long id);
 }
