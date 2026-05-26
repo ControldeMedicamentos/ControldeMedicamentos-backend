@@ -10,4 +10,6 @@ public interface PacienteRepository extends JpaRepository<Paciente, Long> {
     Optional<Paciente> findByNroDocumento(String nroDocumento);
 
     boolean existsByNroDocumento(String nroDocumento);
+
+    long countByActivoTrue();
 }

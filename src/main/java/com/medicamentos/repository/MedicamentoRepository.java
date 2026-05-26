@@ -10,4 +10,6 @@ public interface MedicamentoRepository extends JpaRepository<Medicamento, Long> 
     Optional<Medicamento> findByCodigoSismed(String codigoSismed);
 
     boolean existsByCodigoSismed(String codigoSismed);
+
+    long countByActivoTrue();
 }
