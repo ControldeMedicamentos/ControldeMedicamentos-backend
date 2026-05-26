@@ -9,7 +9,7 @@ import java.util.List;
 public record AtencionDTO(
         Long id,
         Long pacienteId,
-        String pacienteDni,
+        String pacienteNroDocumento,
         String pacienteNombre,
         LocalDate fechaEvaluacion,
         String motivo,

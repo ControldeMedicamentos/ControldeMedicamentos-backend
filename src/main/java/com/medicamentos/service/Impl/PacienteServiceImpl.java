@@ -32,17 +32,39 @@ public class PacienteServiceImpl implements PacienteService {
     }
 
     @Override
-    public PacienteDTO findByDni(String dni) {
-        return pacienteRepository.findByDni(dni)
+    public PacienteDTO findByNroDocumento(String nroDocumento) {
+        return pacienteRepository.findByNroDocumento(nroDocumento)
                 .map(pacienteMapper::toDTO)
-                .orElseThrow(() -> new ResourceNotFoundException("Paciente no encontrado: " + dni));
+                .orElseThrow(() -> new ResourceNotFoundException("Paciente no encontrado: " + nroDocumento));
     }
 
     @Override
     public PacienteDTO create(PacienteCreateDTO request) {
-        if (pacienteRepository.existsByDni(request.dni())) {
-            throw new DuplicateResourceException("Ya existe un paciente con DNI: " + request.dni());
+        if (pacienteRepository.existsByNroDocumento(request.nroDocumento())) {
+            throw new DuplicateResourceException("Ya existe un paciente con documento: " + request.nroDocumento());
         }
         return pacienteMapper.toDTO(pacienteRepository.save(pacienteMapper.toEntity(request)));
+    }
+
+    @Override
+    public PacienteDTO update(Long id, PacienteCreateDTO request) {
+        var paciente = pacienteRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Paciente no encontrado: " + id));
+
+        if (!paciente.getNroDocumento().equals(request.nroDocumento())
+                && pacienteRepository.existsByNroDocumento(request.nroDocumento())) {
+            throw new DuplicateResourceException("Ya existe un paciente con documento: " + request.nroDocumento());
+        }
+
+        paciente.setTipoDocumento(request.tipoDocumento());
+        paciente.setNroDocumento(request.nroDocumento());
+        paciente.setNombresApellidos(request.nombresApellidos());
+        paciente.setEdad(request.edad());
+        paciente.setSexo(request.sexo());
+        paciente.setCarreraArea(request.carreraArea());
+        paciente.setCicloAcademico(request.cicloAcademico());
+        paciente.setTelefono(request.telefono());
+
+        return pacienteMapper.toDTO(pacienteRepository.save(paciente));
     }
 }

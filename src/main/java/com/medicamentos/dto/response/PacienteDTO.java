@@ -1,12 +1,14 @@
 package com.medicamentos.dto.response;
 
 import com.medicamentos.domain.enums.Sexo;
+import com.medicamentos.domain.enums.TipoDocumento;
 
 import java.time.LocalDateTime;
 
 public record PacienteDTO(
         Long id,
-        String dni,
+        TipoDocumento tipoDocumento,
+        String nroDocumento,
         String nombresApellidos,
         Integer edad,
         Sexo sexo,

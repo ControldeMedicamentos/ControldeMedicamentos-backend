@@ -7,7 +7,7 @@ import java.util.Optional;
 
 public interface PacienteRepository extends JpaRepository<Paciente, Long> {
 
-    Optional<Paciente> findByDni(String dni);
+    Optional<Paciente> findByNroDocumento(String nroDocumento);
 
-    boolean existsByDni(String dni);
+    boolean existsByNroDocumento(String nroDocumento);
 }

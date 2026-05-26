@@ -1,6 +1,7 @@
 package com.medicamentos.domain.model;
 
 import com.medicamentos.domain.enums.Sexo;
+import com.medicamentos.domain.enums.TipoDocumento;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -31,8 +32,12 @@ public class Paciente {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 15)
-    private String dni;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_documento", nullable = false, length = 25)
+    private TipoDocumento tipoDocumento = TipoDocumento.DNI;
+
+    @Column(name = "dni", nullable = false, unique = true, length = 20)
+    private String nroDocumento;
 
     @Column(name = "nombres_apellidos", nullable = false, length = 150)
     private String nombresApellidos;
