@@ -2,7 +2,7 @@ package com.medicamentos.service.Impl;
 
 import com.medicamentos.domain.model.Atencion;
 import com.medicamentos.domain.model.ConsumoMedicamento;
-import com.medicamentos.domain.model.Medicamento;
+import com.medicamentos.domain.model.MovimientoInventario;
 import com.medicamentos.domain.model.Paciente;
 import com.medicamentos.dto.request.AtencionCreateDTO;
 import com.medicamentos.dto.request.ConsumoMedicamentoDTO;
@@ -11,9 +11,9 @@ import com.medicamentos.exception.ResourceNotFoundException;
 import com.medicamentos.mapper.AtencionMapper;
 import com.medicamentos.repository.AtencionRepository;
 import com.medicamentos.repository.ConsumoMedicamentoRepository;
-import com.medicamentos.repository.MedicamentoRepository;
 import com.medicamentos.repository.PacienteRepository;
 import com.medicamentos.service.AtencionService;
+import com.medicamentos.service.InventarioService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +28,7 @@ public class AtencionServiceImpl implements AtencionService {
     private final AtencionRepository atencionRepository;
     private final ConsumoMedicamentoRepository consumoMedicamentoRepository;
     private final PacienteRepository pacienteRepository;
-    private final MedicamentoRepository medicamentoRepository;
+    private final InventarioService inventarioService;
     private final AtencionMapper atencionMapper;
 
     @Override
@@ -106,11 +106,17 @@ public class AtencionServiceImpl implements AtencionService {
     }
 
     private ConsumoMedicamento buildConsumo(ConsumoMedicamentoDTO request, Atencion atencion) {
-        Medicamento medicamento = medicamentoRepository.findById(request.medicamentoId())
-                .orElseThrow(() -> new ResourceNotFoundException("Medicamento no encontrado: " + request.medicamentoId()));
+        MovimientoInventario movimiento = inventarioService.descontarStock(
+                request.medicamentoId(),
+                request.cantidadConsumida(),
+                atencion,
+                request.tipoConsumo(),
+                atencion.getUsuarioRegistro()
+        );
         ConsumoMedicamento consumo = new ConsumoMedicamento();
         consumo.setAtencion(atencion);
-        consumo.setMedicamento(medicamento);
+        consumo.setMedicamento(movimiento.getMedicamento());
+        consumo.setMovimientoInventario(movimiento);
         consumo.setCantidadConsumida(request.cantidadConsumida());
         consumo.setTipoConsumo(request.tipoConsumo());
         return consumo;

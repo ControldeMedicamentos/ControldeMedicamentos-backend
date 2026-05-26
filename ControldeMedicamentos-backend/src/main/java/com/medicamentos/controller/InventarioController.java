@@ -33,6 +33,11 @@ public class InventarioController {
         return inventarioService.findByMedicamento(medicamentoId);
     }
 
+    @GetMapping("/low-stock")
+    public List<InventarioDTO> findLowStock() {
+        return inventarioService.findLowStock();
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public InventarioDTO create(@Valid @RequestBody InventarioCreateDTO request) {
