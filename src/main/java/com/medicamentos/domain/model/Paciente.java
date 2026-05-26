@@ -57,6 +57,9 @@ public class Paciente {
     @Column(length = 20)
     private String telefono;
 
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean activo = true;
+
     @OneToMany(mappedBy = "paciente")
     private List<Atencion> atenciones = new ArrayList<>();
 

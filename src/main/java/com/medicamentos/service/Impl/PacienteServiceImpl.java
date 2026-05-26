@@ -67,4 +67,12 @@ public class PacienteServiceImpl implements PacienteService {
 
         return pacienteMapper.toDTO(pacienteRepository.save(paciente));
     }
+
+    @Override
+    public PacienteDTO toggleActivo(Long id) {
+        var paciente = pacienteRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Paciente no encontrado: " + id));
+        paciente.setActivo(!paciente.isActivo());
+        return pacienteMapper.toDTO(pacienteRepository.save(paciente));
+    }
 }
