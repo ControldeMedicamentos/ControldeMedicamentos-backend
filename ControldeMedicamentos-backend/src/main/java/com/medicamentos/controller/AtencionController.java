@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -51,7 +52,34 @@ public class AtencionController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public AtencionDTO create(@Valid @RequestBody AtencionCreateDTO request) {
-        return atencionService.create(request);
+    public AtencionDTO create(@Valid @RequestBody AtencionCreateDTO request, Authentication authentication) {
+        return atencionService.create(withAuthenticatedUser(request, authentication.getName()));
+    }
+
+    private AtencionCreateDTO withAuthenticatedUser(AtencionCreateDTO request, String username) {
+        return new AtencionCreateDTO(
+                request.pacienteId(),
+                request.fechaEvaluacion(),
+                request.motivo(),
+                request.antecedentes(),
+                request.inmunizaciones(),
+                request.signosVitales(),
+                request.examenFisico(),
+                request.laboratorio(),
+                request.diagnostico1(),
+                request.cie101(),
+                request.tipoDiagnostico1(),
+                request.diagnostico2(),
+                request.cie102(),
+                request.tipoDiagnostico2(),
+                request.diagnostico3(),
+                request.cie103(),
+                request.tipoDiagnostico3(),
+                request.conclusion(),
+                request.derivacion(),
+                request.observaciones(),
+                username,
+                request.consumos()
+        );
     }
 }

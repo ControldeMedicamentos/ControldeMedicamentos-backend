@@ -30,7 +30,7 @@ public record AtencionCreateDTO(
         @Size(max = 80) String conclusion,
         @Size(max = 120) String derivacion,
         String observaciones,
-        @NotBlank @Size(max = 80) String usuarioRegistro,
+        @Size(max = 80) String usuarioRegistro,
         @Valid List<ConsumoMedicamentoDTO> consumos
 ) {
 }
