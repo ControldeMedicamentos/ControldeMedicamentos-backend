@@ -11,6 +11,17 @@ CREATE TABLE IF NOT EXISTS pacientes (
     updated_at TIMESTAMP NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS usuarios (
+    id BIGSERIAL PRIMARY KEY,
+    username VARCHAR(80) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    nombre VARCHAR(120) NOT NULL,
+    email VARCHAR(120) NOT NULL UNIQUE,
+    rol VARCHAR(20) NOT NULL,
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS medicamentos (
     id BIGSERIAL PRIMARY KEY,
     codigo_sismed VARCHAR(20) NOT NULL UNIQUE,
@@ -90,3 +101,4 @@ CREATE INDEX IF NOT EXISTS idx_inventarios_medicamento ON inventarios(medicament
 CREATE INDEX IF NOT EXISTS idx_movimientos_periodo ON movimientos_inventario(periodo);
 CREATE INDEX IF NOT EXISTS idx_movimientos_medicamento_periodo ON movimientos_inventario(medicamento_id, periodo);
 CREATE INDEX IF NOT EXISTS idx_consumos_atencion ON consumos_medicamento(atencion_id);
+CREATE INDEX IF NOT EXISTS idx_usuarios_username ON usuarios(username);
