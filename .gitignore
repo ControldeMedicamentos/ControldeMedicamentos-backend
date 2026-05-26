@@ -2,6 +2,7 @@
 # SPRING BOOT / MAVEN
 # ============================================================
 target/
+**/target/
 *.class
 *.jar
 *.war
