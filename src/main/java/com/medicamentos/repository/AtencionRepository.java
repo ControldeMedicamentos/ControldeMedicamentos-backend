@@ -11,4 +11,8 @@ public interface AtencionRepository extends JpaRepository<Atencion, Long> {
     List<Atencion> findByPacienteId(Long pacienteId);
 
     List<Atencion> findByFechaEvaluacionBetween(LocalDate desde, LocalDate hasta);
+
+    long countByFechaEvaluacionBetween(LocalDate desde, LocalDate hasta);
+
+    List<Atencion> findTop5ByOrderByFechaEvaluacionDescIdDesc();
 }
