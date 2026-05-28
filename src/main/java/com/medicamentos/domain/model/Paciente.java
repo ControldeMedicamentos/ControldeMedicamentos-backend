@@ -2,6 +2,7 @@ package com.medicamentos.domain.model;
 
 import com.medicamentos.domain.enums.Sexo;
 import com.medicamentos.domain.enums.TipoDocumento;
+import com.medicamentos.domain.enums.TipoPaciente;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -17,6 +18,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +35,10 @@ public class Paciente {
     private Long id;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_paciente", nullable = false, length = 20, columnDefinition = "VARCHAR(20) DEFAULT 'ESTUDIANTE'")
+    private TipoPaciente tipoPaciente = TipoPaciente.ESTUDIANTE;
+
+    @Enumerated(EnumType.STRING)
     @Column(name = "tipo_documento", nullable = false, length = 25)
     private TipoDocumento tipoDocumento = TipoDocumento.DNI;
 
@@ -42,7 +48,8 @@ public class Paciente {
     @Column(name = "nombres_apellidos", nullable = false, length = 150)
     private String nombresApellidos;
 
-    private Integer edad;
+    @Column(name = "fecha_nacimiento")
+    private LocalDate fechaNacimiento;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20)

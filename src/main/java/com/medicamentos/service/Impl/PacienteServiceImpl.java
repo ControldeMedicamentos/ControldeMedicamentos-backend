@@ -56,10 +56,11 @@ public class PacienteServiceImpl implements PacienteService {
             throw new DuplicateResourceException("Ya existe un paciente con documento: " + request.nroDocumento());
         }
 
+        paciente.setTipoPaciente(request.tipoPaciente());
         paciente.setTipoDocumento(request.tipoDocumento());
         paciente.setNroDocumento(request.nroDocumento());
         paciente.setNombresApellidos(request.nombresApellidos());
-        paciente.setEdad(request.edad());
+        paciente.setFechaNacimiento(request.fechaNacimiento());
         paciente.setSexo(request.sexo());
         paciente.setCarreraArea(request.carreraArea());
         paciente.setCicloAcademico(request.cicloAcademico());
