@@ -2,6 +2,7 @@ package com.medicamentos.service.Impl;
 
 import com.medicamentos.domain.enums.TipoConsumo;
 import com.medicamentos.domain.enums.TipoMovimientoInventario;
+import com.medicamentos.dto.request.AjusteInventarioDTO;
 import com.medicamentos.domain.model.Atencion;
 import com.medicamentos.domain.model.Inventario;
 import com.medicamentos.domain.model.Medicamento;
@@ -50,16 +51,36 @@ public class InventarioServiceImpl implements InventarioService {
     }
 
     @Override
+    @Transactional
     public InventarioDTO create(InventarioCreateDTO request) {
         Medicamento medicamento = medicamentoRepository.findById(request.medicamentoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Medicamento no encontrado: " + request.medicamentoId()));
+
         Inventario inventario = new Inventario();
         inventario.setMedicamento(medicamento);
         inventario.setStockActual(request.stockActual());
-        inventario.setStockMinimo(request.stockMinimo());
+        inventario.setStockMinimo(medicamento.getStockMinimo() != null ? medicamento.getStockMinimo() : 0);
         inventario.setLote(request.lote());
+        inventario.setFechaIngreso(request.fechaIngreso());
         inventario.setFechaVencimiento(request.fechaVencimiento());
-        return inventarioMapper.toDTO(inventarioRepository.save(inventario));
+        inventarioRepository.save(inventario);
+
+        if (request.stockActual() > 0) {
+            registrarMovimientoIngreso(medicamento, request.stockActual(), request.lote());
+        }
+
+        return inventarioMapper.toDTO(inventario);
+    }
+
+    private void registrarMovimientoIngreso(Medicamento medicamento, Integer cantidad, String lote) {
+        MovimientoInventario mov = new MovimientoInventario();
+        mov.setMedicamento(medicamento);
+        mov.setTipoMovimiento(TipoMovimientoInventario.INGRESO);
+        mov.setCantidad(cantidad);
+        mov.setPeriodo(YearMonth.now().format(DateTimeFormatter.ofPattern("yyyyMM")));
+        mov.setObservacion(lote != null ? "Ingreso lote: " + lote : "Ingreso de lote");
+        mov.setUsuarioRegistro("SISTEMA");
+        movimientoInventarioRepository.save(mov);
     }
 
     @Override
@@ -67,10 +88,39 @@ public class InventarioServiceImpl implements InventarioService {
         Inventario inventario = inventarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Lote no encontrado: " + id));
         inventario.setStockActual(request.stockActual());
-        inventario.setStockMinimo(request.stockMinimo());
         inventario.setLote(request.lote());
+        inventario.setFechaIngreso(request.fechaIngreso());
         inventario.setFechaVencimiento(request.fechaVencimiento());
         return inventarioMapper.toDTO(inventarioRepository.save(inventario));
+    }
+
+    @Override
+    @Transactional
+    public void ajustar(AjusteInventarioDTO request, String usuarioRegistro) {
+        Inventario inventario = inventarioRepository.findById(request.inventarioId())
+                .orElseThrow(() -> new ResourceNotFoundException("Lote no encontrado: " + request.inventarioId()));
+
+        if (request.tipoAjuste() == TipoMovimientoInventario.REINGRESO) {
+            inventario.setStockActual(inventario.getStockActual() + request.cantidad());
+        } else {
+            if (inventario.getStockActual() < request.cantidad()) {
+                throw new StockInsuficienteException(
+                    "Stock insuficiente. Disponible: " + inventario.getStockActual()
+                    + ", solicitado: " + request.cantidad()
+                );
+            }
+            inventario.setStockActual(inventario.getStockActual() - request.cantidad());
+        }
+        inventarioRepository.save(inventario);
+
+        MovimientoInventario mov = new MovimientoInventario();
+        mov.setMedicamento(inventario.getMedicamento());
+        mov.setTipoMovimiento(request.tipoAjuste());
+        mov.setCantidad(request.cantidad());
+        mov.setPeriodo(YearMonth.now().format(DateTimeFormatter.ofPattern("yyyyMM")));
+        mov.setObservacion(request.observacion());
+        mov.setUsuarioRegistro(usuarioRegistro != null ? usuarioRegistro : "SISTEMA");
+        movimientoInventarioRepository.save(mov);
     }
 
     @Override

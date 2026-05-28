@@ -7,6 +7,7 @@ import com.medicamentos.domain.model.Paciente;
 import com.medicamentos.dto.request.AtencionCreateDTO;
 import com.medicamentos.dto.request.ConsumoMedicamentoDTO;
 import com.medicamentos.dto.response.AtencionDTO;
+import com.medicamentos.exception.DuplicateResourceException;
 import com.medicamentos.exception.ResourceNotFoundException;
 import com.medicamentos.mapper.AtencionMapper;
 import com.medicamentos.repository.AtencionRepository;
@@ -58,6 +59,9 @@ public class AtencionServiceImpl implements AtencionService {
     public AtencionDTO create(AtencionCreateDTO request) {
         Paciente paciente = pacienteRepository.findById(request.pacienteId())
                 .orElseThrow(() -> new ResourceNotFoundException("Paciente no encontrado: " + request.pacienteId()));
+        if (!paciente.isActivo()) {
+            throw new DuplicateResourceException("No se puede registrar atención: el paciente está inactivo.");
+        }
         Atencion atencion = buildAtencion(request, paciente);
         Atencion savedAtencion = atencionRepository.save(atencion);
         List<ConsumoMedicamento> consumos = saveConsumos(request.consumos(), savedAtencion);

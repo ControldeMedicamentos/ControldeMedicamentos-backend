@@ -7,6 +7,6 @@ import jakarta.validation.constraints.NotNull;
 public record ConsumoMedicamentoDTO(
         @NotNull Long medicamentoId,
         @NotNull @Min(1) Integer cantidadConsumida,
-        @NotNull TipoConsumo tipoConsumo
+        TipoConsumo tipoConsumo
 ) {
 }

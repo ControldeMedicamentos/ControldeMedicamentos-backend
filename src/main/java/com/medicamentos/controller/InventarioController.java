@@ -1,11 +1,13 @@
 package com.medicamentos.controller;
 
+import com.medicamentos.dto.request.AjusteInventarioDTO;
 import com.medicamentos.dto.request.InventarioCreateDTO;
 import com.medicamentos.dto.response.InventarioDTO;
 import com.medicamentos.service.InventarioService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -48,5 +50,11 @@ public class InventarioController {
     @PutMapping("/{id}")
     public InventarioDTO update(@PathVariable Long id, @Valid @RequestBody InventarioCreateDTO request) {
         return inventarioService.update(id, request);
+    }
+
+    @PostMapping("/adjustments")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void ajustar(@Valid @RequestBody AjusteInventarioDTO request, Authentication authentication) {
+        inventarioService.ajustar(request, authentication.getName());
     }
 }

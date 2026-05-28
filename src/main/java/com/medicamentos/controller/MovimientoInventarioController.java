@@ -33,6 +33,11 @@ public class MovimientoInventarioController {
         return movimientoInventarioService.findByPeriodo(periodo);
     }
 
+    @GetMapping("/medicine/{medicamentoId}")
+    public List<MovimientoInventarioDTO> findByMedicamento(@PathVariable Long medicamentoId) {
+        return movimientoInventarioService.findByMedicamento(medicamentoId);
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public MovimientoInventarioDTO create(@Valid @RequestBody MovimientoInventarioCreateDTO request) {

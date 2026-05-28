@@ -8,4 +8,6 @@ import java.util.List;
 public interface ConsumoMedicamentoRepository extends JpaRepository<ConsumoMedicamento, Long> {
 
     List<ConsumoMedicamento> findByAtencionId(Long atencionId);
+
+    boolean existsByMedicamentoId(Long medicamentoId);
 }

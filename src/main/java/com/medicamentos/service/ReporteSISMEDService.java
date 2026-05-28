@@ -9,4 +9,6 @@ public interface ReporteSISMEDService {
     List<ReporteSISMEDDTO> generarReporteMensual(String periodo);
 
     byte[] generarExcel(String periodo);
+
+    int cerrarMes(String periodo);
 }

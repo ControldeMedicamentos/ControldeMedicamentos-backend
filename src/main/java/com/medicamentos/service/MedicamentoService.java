@@ -18,4 +18,6 @@ public interface MedicamentoService {
     MedicamentoDTO update(Long id, MedicamentoCreateDTO request);
 
     MedicamentoDTO toggleActivo(Long id);
+
+    void delete(Long id);
 }

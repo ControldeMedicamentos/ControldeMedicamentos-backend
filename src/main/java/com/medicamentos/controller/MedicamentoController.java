@@ -6,6 +6,7 @@ import com.medicamentos.service.MedicamentoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -54,5 +55,11 @@ public class MedicamentoController {
     @PatchMapping("/{id}/status")
     public MedicamentoDTO toggleActivo(@PathVariable Long id) {
         return medicamentoService.toggleActivo(id);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable Long id) {
+        medicamentoService.delete(id);
     }
 }

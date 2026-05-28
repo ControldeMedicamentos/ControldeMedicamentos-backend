@@ -22,9 +22,10 @@ import java.util.List;
 public class SISMEDExcelExporter {
 
     private static final String[] HEADERS = {
-            "CODIGO_MED", "DESCRIPCION", "SALDO", "INGRE", "REINGRE", "VENTA", "SIS", "INTERSAN",
-            "FAC_PERD", "DEFNAC", "EXO", "SOAT", "CREDHOSP", "OTR_CONV", "CONSUMOS", "DEVOLUCIONES",
-            "VENCIDOS", "MERMA", "DISTRIBUCION", "TRANSFERENCIA", "STOCK_FINAL", "VALIDACION"
+            "MEDICAMENTO", "SALDO", "INGRE", "REINGRE",
+            "ALUMNO", "DOCENTE", "ADMIN", "INVITADO",
+            "CONSUMOS", "DEVOLUCIONES", "VENCIDOS", "MERMA",
+            "DISTRIBUCION", "TRANSFERENCIA", "STOCK_FINAL", "VALIDACION"
     };
 
     public byte[] exportar(List<ReporteSISMEDDTO> reportes, String periodo) {
@@ -71,30 +72,24 @@ public class SISMEDExcelExporter {
 
     private int fillRows(Sheet sheet, List<ReporteSISMEDDTO> reportes, CellStyle bodyStyle) {
         int rowIndex = 6;
-        for (ReporteSISMEDDTO reporte : reportes) {
+        for (ReporteSISMEDDTO r : reportes) {
             Row row = sheet.createRow(rowIndex++);
-            createCell(row, 0, reporte.codigoSismed(), bodyStyle);
-            createCell(row, 1, reporte.descripcionSismed(), bodyStyle);
-            createNumericCell(row, 2, reporte.saldoInicial(), bodyStyle);
-            createNumericCell(row, 3, reporte.ingresos(), bodyStyle);
-            createNumericCell(row, 4, reporte.reingresos(), bodyStyle);
-            createNumericCell(row, 5, reporte.venta(), bodyStyle);
-            createNumericCell(row, 6, reporte.sis(), bodyStyle);
-            createNumericCell(row, 7, reporte.intersanidad(), bodyStyle);
-            createNumericCell(row, 8, reporte.factoresPerdida(), bodyStyle);
-            createNumericCell(row, 9, reporte.defuncionNacimiento(), bodyStyle);
-            createNumericCell(row, 10, reporte.exonerado(), bodyStyle);
-            createNumericCell(row, 11, reporte.soat(), bodyStyle);
-            createNumericCell(row, 12, reporte.creditoHospitalario(), bodyStyle);
-            createNumericCell(row, 13, reporte.otroConvenio(), bodyStyle);
-            createNumericCell(row, 14, reporte.consumos(), bodyStyle);
-            createNumericCell(row, 15, reporte.devoluciones(), bodyStyle);
-            createNumericCell(row, 16, reporte.vencidos(), bodyStyle);
-            createNumericCell(row, 17, reporte.merma(), bodyStyle);
-            createNumericCell(row, 18, reporte.distribucion(), bodyStyle);
-            createNumericCell(row, 19, reporte.transferencia(), bodyStyle);
-            createNumericCell(row, 20, reporte.stockFinal(), bodyStyle);
-            createCell(row, 21, "OK", bodyStyle);
+            createCell(row, 0, r.nombreMedicamento(), bodyStyle);
+            createNumericCell(row, 1, r.saldoInicial(), bodyStyle);
+            createNumericCell(row, 2, r.ingresos(), bodyStyle);
+            createNumericCell(row, 3, r.reingresos(), bodyStyle);
+            createNumericCell(row, 4, r.alumno(), bodyStyle);
+            createNumericCell(row, 5, r.docente(), bodyStyle);
+            createNumericCell(row, 6, r.administrativo(), bodyStyle);
+            createNumericCell(row, 7, r.invitado(), bodyStyle);
+            createNumericCell(row, 8, r.consumos(), bodyStyle);
+            createNumericCell(row, 9, r.devoluciones(), bodyStyle);
+            createNumericCell(row, 10, r.vencidos(), bodyStyle);
+            createNumericCell(row, 11, r.merma(), bodyStyle);
+            createNumericCell(row, 12, r.distribucion(), bodyStyle);
+            createNumericCell(row, 13, r.transferencia(), bodyStyle);
+            createNumericCell(row, 14, r.stockFinal(), bodyStyle);
+            createCell(row, 15, "OK", bodyStyle);
         }
         return rowIndex;
     }
@@ -102,15 +97,15 @@ public class SISMEDExcelExporter {
     private void createTotalsRow(Sheet sheet, int rowIndex, CellStyle totalStyle) {
         Row row = sheet.createRow(rowIndex);
         createCell(row, 0, "TOTALES", totalStyle);
-        for (int index = 2; index <= 20; index++) {
+        for (int index = 1; index <= 14; index++) {
             String column = columnName(index);
             createFormulaCell(row, index, "SUM(" + column + "7:" + column + rowIndex + ")", totalStyle);
         }
-        createFormulaCell(row, 21, "IF(U" + (rowIndex + 1) + "=C" + (rowIndex + 1)
-                + "+D" + (rowIndex + 1) + "+E" + (rowIndex + 1)
-                + "-O" + (rowIndex + 1) + "-P" + (rowIndex + 1)
-                + "-Q" + (rowIndex + 1) + "-R" + (rowIndex + 1)
-                + "-S" + (rowIndex + 1) + "-T" + (rowIndex + 1) + ",\"OK\",\"REVISAR\")", totalStyle);
+        int tr = rowIndex + 1;
+        createFormulaCell(row, 15,
+                "IF(O" + tr + "=B" + tr + "+C" + tr + "+D" + tr
+                + "-I" + tr + "-J" + tr + "-K" + tr + "-L" + tr
+                + "-M" + tr + "-N" + tr + ",\"OK\",\"REVISAR\")", totalStyle);
     }
 
     private CellStyle createTitleStyle(Workbook workbook) {

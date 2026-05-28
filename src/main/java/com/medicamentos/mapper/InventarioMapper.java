@@ -11,11 +11,11 @@ public class InventarioMapper {
         return new InventarioDTO(
                 inventario.getId(),
                 inventario.getMedicamento().getId(),
-                inventario.getMedicamento().getCodigoSismed(),
-                inventario.getMedicamento().getDescripcionSismed(),
+                inventario.getMedicamento().getNombre(),
                 inventario.getStockActual(),
                 inventario.getStockMinimo(),
                 inventario.getLote(),
+                inventario.getFechaIngreso(),
                 inventario.getFechaVencimiento(),
                 inventario.getUpdatedAt()
         );

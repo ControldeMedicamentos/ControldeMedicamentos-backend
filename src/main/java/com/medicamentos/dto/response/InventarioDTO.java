@@ -6,11 +6,11 @@ import java.time.LocalDateTime;
 public record InventarioDTO(
         Long id,
         Long medicamentoId,
-        String codigoSismed,
-        String descripcionSismed,
+        String nombreMedicamento,
         Integer stockActual,
         Integer stockMinimo,
         String lote,
+        LocalDate fechaIngreso,
         LocalDate fechaVencimiento,
         LocalDateTime updatedAt
 ) {

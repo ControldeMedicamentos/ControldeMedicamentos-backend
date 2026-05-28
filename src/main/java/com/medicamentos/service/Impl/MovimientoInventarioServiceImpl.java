@@ -36,6 +36,12 @@ public class MovimientoInventarioServiceImpl implements MovimientoInventarioServ
     }
 
     @Override
+    public List<MovimientoInventarioDTO> findByMedicamento(Long medicamentoId) {
+        return movimientoInventarioRepository.findByMedicamentoIdOrderByCreatedAtDesc(medicamentoId)
+                .stream().map(movimientoInventarioMapper::toDTO).toList();
+    }
+
+    @Override
     public MovimientoInventarioDTO create(MovimientoInventarioCreateDTO request) {
         Medicamento medicamento = medicamentoRepository.findById(request.medicamentoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Medicamento no encontrado: " + request.medicamentoId()));

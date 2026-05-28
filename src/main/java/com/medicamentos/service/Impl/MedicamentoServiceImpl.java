@@ -5,10 +5,13 @@ import com.medicamentos.dto.response.MedicamentoDTO;
 import com.medicamentos.exception.DuplicateResourceException;
 import com.medicamentos.exception.ResourceNotFoundException;
 import com.medicamentos.mapper.MedicamentoMapper;
+import com.medicamentos.repository.ConsumoMedicamentoRepository;
+import com.medicamentos.repository.InventarioRepository;
 import com.medicamentos.repository.MedicamentoRepository;
 import com.medicamentos.service.MedicamentoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -18,6 +21,8 @@ public class MedicamentoServiceImpl implements MedicamentoService {
 
     private final MedicamentoRepository medicamentoRepository;
     private final MedicamentoMapper medicamentoMapper;
+    private final InventarioRepository inventarioRepository;
+    private final ConsumoMedicamentoRepository consumoRepository;
 
     @Override
     public List<MedicamentoDTO> findAll() {
@@ -40,9 +45,6 @@ public class MedicamentoServiceImpl implements MedicamentoService {
 
     @Override
     public MedicamentoDTO create(MedicamentoCreateDTO request) {
-        if (medicamentoRepository.existsByCodigoSismed(request.codigoSismed())) {
-            throw new DuplicateResourceException("Ya existe un medicamento con codigo SISMED: " + request.codigoSismed());
-        }
         return medicamentoMapper.toDTO(medicamentoRepository.save(medicamentoMapper.toEntity(request)));
     }
 
@@ -51,17 +53,14 @@ public class MedicamentoServiceImpl implements MedicamentoService {
         var medicamento = medicamentoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Medicamento no encontrado: " + id));
 
-        if (!medicamento.getCodigoSismed().equals(request.codigoSismed())
-                && medicamentoRepository.existsByCodigoSismed(request.codigoSismed())) {
-            throw new DuplicateResourceException("Ya existe un medicamento con codigo SISMED: " + request.codigoSismed());
-        }
-
-        medicamento.setCodigoSismed(request.codigoSismed());
-        medicamento.setCodigoSiga(request.codigoSiga());
-        medicamento.setDescripcionSismed(request.descripcionSismed());
-        medicamento.setPresentacionFrasco(request.presentacionFrasco());
-        medicamento.setDescripcionCorta(request.descripcionCorta());
-        medicamento.setConversion(request.conversion() == null ? 1 : request.conversion());
+        medicamento.setNombre(request.nombre().trim());
+        medicamento.setRegistroSanitario(request.registroSanitario());
+        medicamento.setTipoProducto(request.tipoProducto());
+        medicamento.setPresentacion(request.presentacion());
+        medicamento.setFabricante(request.fabricante());
+        medicamento.setPaisFabricacion(request.paisFabricacion());
+        medicamento.setPrecioUnitario(request.precioUnitario());
+        medicamento.setStockMinimo(request.stockMinimo() != null ? request.stockMinimo() : 0);
         medicamento.setActivo(request.activo() == null || request.activo());
 
         return medicamentoMapper.toDTO(medicamentoRepository.save(medicamento));
@@ -73,5 +72,20 @@ public class MedicamentoServiceImpl implements MedicamentoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Medicamento no encontrado: " + id));
         medicamento.setActivo(!medicamento.getActivo());
         return medicamentoMapper.toDTO(medicamentoRepository.save(medicamento));
+    }
+
+    @Override
+    @Transactional
+    public void delete(Long id) {
+        if (!medicamentoRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Medicamento no encontrado: " + id);
+        }
+        if (consumoRepository.existsByMedicamentoId(id)) {
+            throw new DuplicateResourceException(
+                "No se puede eliminar: el medicamento tiene consumos registrados en atenciones."
+            );
+        }
+        inventarioRepository.deleteAll(inventarioRepository.findByMedicamentoId(id));
+        medicamentoRepository.deleteById(id);
     }
 }

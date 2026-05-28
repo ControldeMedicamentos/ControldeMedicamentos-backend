@@ -5,6 +5,7 @@ import com.medicamentos.domain.enums.TipoDocumento;
 import com.medicamentos.domain.enums.TipoPaciente;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
@@ -15,7 +16,7 @@ public record PacienteCreateDTO(
         @NotNull TipoDocumento tipoDocumento,
         @NotBlank @Size(max = 20) String nroDocumento,
         @NotBlank @Size(min = 3, max = 150) String nombresApellidos,
-        LocalDate fechaNacimiento,
+        @Past LocalDate fechaNacimiento,
         @NotNull Sexo sexo,
         @Size(max = 150) String carreraArea,
         @Size(max = 30) String cicloAcademico,
