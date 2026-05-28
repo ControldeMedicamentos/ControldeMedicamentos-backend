@@ -10,10 +10,11 @@ public class PacienteMapper {
 
     public Paciente toEntity(PacienteCreateDTO dto) {
         Paciente paciente = new Paciente();
+        paciente.setTipoPaciente(dto.tipoPaciente());
         paciente.setTipoDocumento(dto.tipoDocumento());
         paciente.setNroDocumento(dto.nroDocumento());
         paciente.setNombresApellidos(dto.nombresApellidos());
-        paciente.setEdad(dto.edad());
+        paciente.setFechaNacimiento(dto.fechaNacimiento());
         paciente.setSexo(dto.sexo());
         paciente.setCarreraArea(dto.carreraArea());
         paciente.setCicloAcademico(dto.cicloAcademico());
@@ -24,10 +25,11 @@ public class PacienteMapper {
     public PacienteDTO toDTO(Paciente paciente) {
         return new PacienteDTO(
                 paciente.getId(),
+                paciente.getTipoPaciente(),
                 paciente.getTipoDocumento(),
                 paciente.getNroDocumento(),
                 paciente.getNombresApellidos(),
-                paciente.getEdad(),
+                paciente.getFechaNacimiento(),
                 paciente.getSexo(),
                 paciente.getCarreraArea(),
                 paciente.getCicloAcademico(),
