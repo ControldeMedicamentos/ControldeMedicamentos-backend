@@ -9,6 +9,8 @@ public record DashboardDTO(
         long inventariosAlertaVencimiento,
         long totalMedicamentosActivos,
         List<AtencionResumenDTO> atencioneRecientes,
-        List<InventarioDTO> stockAlertas
+        List<InventarioDTO> stockAlertas,
+        List<AtencionesPorDiaDTO> atencionesPorDia,
+        List<TopConsumoDTO> topConsumos
 ) {
 }

@@ -17,6 +17,8 @@ public interface InventarioService {
 
     List<InventarioDTO> findLowStock();
 
+    List<InventarioDTO> findVencidosPendientes();
+
     InventarioDTO create(InventarioCreateDTO request);
 
     InventarioDTO update(Long id, InventarioCreateDTO request);

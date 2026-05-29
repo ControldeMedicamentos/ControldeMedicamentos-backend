@@ -51,6 +51,14 @@ public class InventarioServiceImpl implements InventarioService {
     }
 
     @Override
+    public List<InventarioDTO> findVencidosPendientes() {
+        return inventarioRepository.findVencidosPendientes(LocalDate.now())
+                .stream()
+                .map(inventarioMapper::toDTO)
+                .toList();
+    }
+
+    @Override
     @Transactional
     public InventarioDTO create(InventarioCreateDTO request) {
         Medicamento medicamento = medicamentoRepository.findById(request.medicamentoId())

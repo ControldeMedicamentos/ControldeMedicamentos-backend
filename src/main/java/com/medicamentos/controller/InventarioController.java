@@ -41,6 +41,11 @@ public class InventarioController {
         return inventarioService.findLowStock();
     }
 
+    @GetMapping("/expired-pending")
+    public List<InventarioDTO> getVencidosPendientes() {
+        return inventarioService.findVencidosPendientes();
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public InventarioDTO create(@Valid @RequestBody InventarioCreateDTO request) {

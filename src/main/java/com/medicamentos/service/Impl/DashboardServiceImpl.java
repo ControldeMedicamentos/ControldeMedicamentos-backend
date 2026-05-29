@@ -3,8 +3,10 @@ package com.medicamentos.service.Impl;
 import com.medicamentos.domain.model.Atencion;
 import com.medicamentos.domain.model.Inventario;
 import com.medicamentos.dto.response.AtencionResumenDTO;
+import com.medicamentos.dto.response.AtencionesPorDiaDTO;
 import com.medicamentos.dto.response.DashboardDTO;
 import com.medicamentos.dto.response.InventarioDTO;
+import com.medicamentos.dto.response.TopConsumoDTO;
 import com.medicamentos.mapper.InventarioMapper;
 import com.medicamentos.repository.AtencionRepository;
 import com.medicamentos.repository.ConsumoMedicamentoRepository;
@@ -18,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +40,7 @@ public class DashboardServiceImpl implements DashboardService {
         LocalDate hoy = LocalDate.now();
         LocalDate primerDiaMes = hoy.withDayOfMonth(1);
         LocalDate en30Dias = hoy.plusDays(30);
+        LocalDate hace13Dias = hoy.minusDays(13);
 
         long totalPacientes = pacienteRepository.countByActivoTrue();
         long totalMedicamentos = medicamentoRepository.countByActivoTrue();
@@ -64,6 +69,23 @@ public class DashboardServiceImpl implements DashboardService {
                 .map(this::toResumen)
                 .toList();
 
+        Map<LocalDate, Long> porDiaMap = atencionRepository.countGroupedByDay(hace13Dias, hoy)
+                .stream()
+                .collect(Collectors.toMap(
+                        row -> (LocalDate) row[0],
+                        row -> (Long) row[1]
+                ));
+
+        List<AtencionesPorDiaDTO> atencionesPorDia = hace13Dias.datesUntil(hoy.plusDays(1))
+                .map(d -> new AtencionesPorDiaDTO(d.toString(), porDiaMap.getOrDefault(d, 0L)))
+                .toList();
+
+        List<TopConsumoDTO> topConsumos = consumoRepository.findTopConsumosRaw(primerDiaMes, hoy)
+                .stream()
+                .limit(5)
+                .map(row -> new TopConsumoDTO((String) row[0], ((Number) row[1]).longValue()))
+                .toList();
+
         return new DashboardDTO(
                 totalPacientes,
                 atencionesMes,
@@ -71,7 +93,9 @@ public class DashboardServiceImpl implements DashboardService {
                 alertasVencimiento,
                 totalMedicamentos,
                 recientes,
-                stockAlertas
+                stockAlertas,
+                atencionesPorDia,
+                topConsumos
         );
     }
 
