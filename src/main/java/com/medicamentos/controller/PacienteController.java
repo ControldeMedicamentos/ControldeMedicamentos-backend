@@ -8,6 +8,7 @@ import com.medicamentos.dto.response.PacienteDTO;
 import com.medicamentos.exception.ResourceNotFoundException;
 import com.medicamentos.repository.PacienteArchivoRepository;
 import com.medicamentos.repository.PacienteRepository;
+import com.medicamentos.service.AuditLogService;
 import com.medicamentos.service.FileStorageService;
 import com.medicamentos.service.PacienteService;
 import jakarta.validation.Valid;
@@ -18,16 +19,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.net.MalformedURLException;
@@ -43,15 +35,20 @@ public class PacienteController {
     private final PacienteArchivoRepository pacienteArchivoRepository;
     private final PacienteRepository pacienteRepository;
     private final FileStorageService fileStorageService;
+    private final AuditLogService auditLogService;
 
     @GetMapping
     public List<PacienteDTO> findAll() {
+        auditLogService.log("CONSULTAR_PACIENTES", "Pacientes", "Consulta del listado de pacientes");
         return pacienteService.findAll();
     }
 
     @GetMapping("/{id}")
     public PacienteDTO findById(@PathVariable Long id) {
-        return pacienteService.findById(id);
+        PacienteDTO result = pacienteService.findById(id);
+        auditLogService.log("CONSULTAR_DETALLE_PACIENTE", "Pacientes",
+                "Detalle del paciente: " + result.nombresApellidos() + " (ID: " + id + ")");
+        return result;
     }
 
     @GetMapping("/document/{nroDocumento}")
@@ -62,17 +59,27 @@ public class PacienteController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public PacienteDTO create(@Valid @RequestBody PacienteCreateDTO request) {
-        return pacienteService.create(request);
+        PacienteDTO result = pacienteService.create(request);
+        auditLogService.log("CREAR_PACIENTE", "Pacientes",
+                "Paciente registrado: " + result.nombresApellidos() + " — Doc: " + result.nroDocumento());
+        return result;
     }
 
     @PutMapping("/{id}")
     public PacienteDTO update(@PathVariable Long id, @Valid @RequestBody PacienteCreateDTO request) {
-        return pacienteService.update(id, request);
+        PacienteDTO result = pacienteService.update(id, request);
+        auditLogService.log("ACTUALIZAR_PACIENTE", "Pacientes",
+                "Paciente actualizado: " + result.nombresApellidos());
+        return result;
     }
 
     @PatchMapping("/{id}/status")
     public PacienteDTO toggleActivo(@PathVariable Long id) {
-        return pacienteService.toggleActivo(id);
+        PacienteDTO result = pacienteService.toggleActivo(id);
+        String accion = result.activo() ? "ACTIVAR_PACIENTE" : "DESACTIVAR_PACIENTE";
+        auditLogService.log(accion, "Pacientes",
+                result.nombresApellidos() + " → " + (result.activo() ? "Activo" : "Inactivo"));
+        return result;
     }
 
     @PostMapping("/{id}/files")
@@ -88,6 +95,8 @@ public class PacienteController {
         archivo.setTipoContenido(file.getContentType());
         archivo.setTamanio(file.getSize());
         PacienteArchivo saved = pacienteArchivoRepository.save(archivo);
+        auditLogService.log("SUBIR_ARCHIVO", "Pacientes",
+                "Archivo subido para paciente ID " + id + ": " + file.getOriginalFilename());
         return toArchivoDTO(saved);
     }
 

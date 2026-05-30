@@ -32,6 +32,7 @@ public class JwtUtil {
                 .subject(usuario.getUsername())
                 .claim("rol", usuario.getRol().name())
                 .claim("nombre", usuario.getNombre())
+                .claim("mustChangePassword", Boolean.TRUE.equals(usuario.getMustChangePassword()))
                 .issuedAt(now)
                 .expiration(expiresAt)
                 .signWith(secretKey)

@@ -11,6 +11,7 @@ public record DashboardDTO(
         List<AtencionResumenDTO> atencioneRecientes,
         List<InventarioDTO> stockAlertas,
         List<AtencionesPorDiaDTO> atencionesPorDia,
-        List<TopConsumoDTO> topConsumos
+        List<TopConsumoDTO> topConsumos,
+        List<AuditLogDTO> actividadReciente
 ) {
 }

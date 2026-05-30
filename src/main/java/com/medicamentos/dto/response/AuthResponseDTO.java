@@ -6,6 +6,7 @@ public record AuthResponseDTO(
         String token,
         Long expiresIn,
         String username,
-        RolUsuario rol
+        RolUsuario rol,
+        boolean mustChangePassword
 ) {
 }

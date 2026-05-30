@@ -8,6 +8,7 @@ import com.medicamentos.exception.ResourceNotFoundException;
 import com.medicamentos.repository.AtencionArchivoRepository;
 import com.medicamentos.repository.AtencionRepository;
 import com.medicamentos.service.AtencionService;
+import com.medicamentos.service.AuditLogService;
 import com.medicamentos.service.FileStorageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,14 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.net.MalformedURLException;
@@ -43,6 +37,7 @@ public class AtencionController {
     private final AtencionArchivoRepository archivoRepository;
     private final AtencionRepository atencionRepository;
     private final FileStorageService fileStorageService;
+    private final AuditLogService auditLogService;
 
     @GetMapping
     public List<AtencionDTO> findAll() {
@@ -56,21 +51,30 @@ public class AtencionController {
 
     @GetMapping("/patient/{pacienteId}")
     public List<AtencionDTO> findByPaciente(@PathVariable Long pacienteId) {
+        auditLogService.log("CONSULTAR_ATENCIONES_PACIENTE", "Atenciones",
+                "Consulta de atenciones del paciente ID " + pacienteId);
         return atencionService.findByPaciente(pacienteId);
     }
 
     @GetMapping("/search")
     public List<AtencionDTO> findByFecha(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta
-    ) {
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+        auditLogService.log("CONSULTAR_ATENCIONES", "Atenciones",
+                "Consulta de atenciones del " + desde + " al " + hasta);
         return atencionService.findByFecha(desde, hasta);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public AtencionDTO create(@Valid @RequestBody AtencionCreateDTO request, Authentication authentication) {
-        return atencionService.create(withAuthenticatedUser(request, authentication.getName()));
+        AtencionDTO result = atencionService.create(withAuthenticatedUser(request, authentication.getName()));
+        auditLogService.log("CREAR_ATENCION", "Atenciones",
+                "Atención registrada para paciente ID " + request.pacienteId()
+                + " — Motivo: " + request.motivo()
+                + (result.consumos() != null && !result.consumos().isEmpty()
+                        ? " — " + result.consumos().size() + " medicamento(s) consumido(s)" : ""));
+        return result;
     }
 
     @PostMapping("/{id}/files")
@@ -119,28 +123,14 @@ public class AtencionController {
 
     private AtencionCreateDTO withAuthenticatedUser(AtencionCreateDTO request, String username) {
         return new AtencionCreateDTO(
-                request.pacienteId(),
-                request.fechaEvaluacion(),
-                request.motivo(),
-                request.antecedentes(),
-                request.inmunizaciones(),
-                request.signosVitales(),
-                request.examenFisico(),
-                request.laboratorio(),
-                request.diagnostico1(),
-                request.cie101(),
-                request.tipoDiagnostico1(),
-                request.diagnostico2(),
-                request.cie102(),
-                request.tipoDiagnostico2(),
-                request.diagnostico3(),
-                request.cie103(),
-                request.tipoDiagnostico3(),
-                request.conclusion(),
-                request.derivacion(),
-                request.observaciones(),
-                username,
-                request.consumos()
+                request.pacienteId(), request.fechaEvaluacion(), request.motivo(),
+                request.antecedentes(), request.inmunizaciones(), request.signosVitales(),
+                request.examenFisico(), request.laboratorio(),
+                request.diagnostico1(), request.cie101(), request.tipoDiagnostico1(),
+                request.diagnostico2(), request.cie102(), request.tipoDiagnostico2(),
+                request.diagnostico3(), request.cie103(), request.tipoDiagnostico3(),
+                request.conclusion(), request.derivacion(), request.observaciones(),
+                username, request.consumos()
         );
     }
 }

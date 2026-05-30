@@ -103,3 +103,57 @@ CREATE INDEX IF NOT EXISTS idx_movimientos_periodo ON movimientos_inventario(per
 CREATE INDEX IF NOT EXISTS idx_movimientos_medicamento_periodo ON movimientos_inventario(medicamento_id, periodo);
 CREATE INDEX IF NOT EXISTS idx_consumos_atencion ON consumos_medicamento(atencion_id);
 CREATE INDEX IF NOT EXISTS idx_usuarios_username ON usuarios(username);
+
+CREATE TABLE IF NOT EXISTS roles (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(80) NOT NULL UNIQUE,
+    descripcion VARCHAR(250),
+    es_sistema BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+CREATE TABLE IF NOT EXISTS vistas (
+    id SERIAL PRIMARY KEY,
+    codigo VARCHAR(50) NOT NULL UNIQUE,
+    nombre VARCHAR(100) NOT NULL,
+    ruta VARCHAR(150),
+    grupo VARCHAR(80),
+    orden INTEGER DEFAULT 0,
+    activo BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS rol_vista_permisos (
+    id SERIAL PRIMARY KEY,
+    rol_id INTEGER NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+    vista_id INTEGER NOT NULL REFERENCES vistas(id) ON DELETE CASCADE,
+    leer BOOLEAN NOT NULL DEFAULT FALSE,
+    escribir BOOLEAN NOT NULL DEFAULT FALSE,
+    modificar BOOLEAN NOT NULL DEFAULT FALSE,
+    eliminar BOOLEAN NOT NULL DEFAULT FALSE,
+    UNIQUE(rol_id, vista_id)
+);
+
+INSERT INTO roles (name, descripcion, es_sistema)
+VALUES ('ROLE_ADMIN', 'Administrador del sistema con acceso total', TRUE)
+ON CONFLICT (name) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id BIGSERIAL PRIMARY KEY,
+    timestamp TIMESTAMP NOT NULL,
+    user_email VARCHAR(120),
+    user_rol VARCHAR(30),
+    accion VARCHAR(60) NOT NULL,
+    modulo VARCHAR(50) NOT NULL,
+    detalle TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_user_email ON audit_logs(user_email);
+
+INSERT INTO vistas (codigo, nombre, ruta, grupo, orden) VALUES
+    ('VISTA_DASHBOARD',     'Dashboard',           '/dashboard',            'General',  1),
+    ('VISTA_PACIENTES',     'Pacientes',            '/pacientes',            'Clínico',  2),
+    ('VISTA_ATENCIONES',    'Atenciones',           '/atenciones',           'Clínico',  3),
+    ('VISTA_MEDICAMENTOS',  'Medicamentos',         '/medicamentos',         'Farmacia', 4),
+    ('VISTA_INVENTARIO',    'Inventario / Ajustes', '/medicamentos/ajustes', 'Farmacia', 5),
+    ('VISTA_REPORTES',      'Reportes',             '/reportes',             'Reportes', 6)
+ON CONFLICT (codigo) DO NOTHING;
