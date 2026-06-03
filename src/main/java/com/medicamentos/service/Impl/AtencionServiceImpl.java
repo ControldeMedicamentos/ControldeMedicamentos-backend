@@ -7,6 +7,7 @@ import com.medicamentos.domain.model.Paciente;
 import com.medicamentos.dto.request.AtencionCreateDTO;
 import com.medicamentos.dto.request.ConsumoMedicamentoDTO;
 import com.medicamentos.dto.response.AtencionDTO;
+import com.medicamentos.exception.DuplicateResourceException;
 import com.medicamentos.exception.ResourceNotFoundException;
 import com.medicamentos.mapper.AtencionMapper;
 import com.medicamentos.repository.AtencionRepository;
@@ -15,6 +16,8 @@ import com.medicamentos.repository.PacienteRepository;
 import com.medicamentos.service.AtencionService;
 import com.medicamentos.service.InventarioService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,6 +50,12 @@ public class AtencionServiceImpl implements AtencionService {
     }
 
     @Override
+    public Page<AtencionDTO> findPageByFecha(LocalDate desde, LocalDate hasta, String search, Pageable pageable) {
+        return atencionRepository.findPageByFecha(desde, hasta, normalize(search), pageable)
+                .map(this::toDTO);
+    }
+
+    @Override
     public AtencionDTO findById(Long id) {
         Atencion atencion = atencionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Atencion no encontrada: " + id));
@@ -58,6 +67,9 @@ public class AtencionServiceImpl implements AtencionService {
     public AtencionDTO create(AtencionCreateDTO request) {
         Paciente paciente = pacienteRepository.findById(request.pacienteId())
                 .orElseThrow(() -> new ResourceNotFoundException("Paciente no encontrado: " + request.pacienteId()));
+        if (!paciente.isActivo()) {
+            throw new DuplicateResourceException("No se puede registrar atención: el paciente está inactivo.");
+        }
         Atencion atencion = buildAtencion(request, paciente);
         Atencion savedAtencion = atencionRepository.save(atencion);
         List<ConsumoMedicamento> consumos = saveConsumos(request.consumos(), savedAtencion);
@@ -120,5 +132,9 @@ public class AtencionServiceImpl implements AtencionService {
         consumo.setCantidadConsumida(request.cantidadConsumida());
         consumo.setTipoConsumo(request.tipoConsumo());
         return consumo;
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.trim();
     }
 }

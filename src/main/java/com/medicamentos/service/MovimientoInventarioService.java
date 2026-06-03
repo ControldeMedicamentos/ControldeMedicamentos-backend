@@ -11,5 +11,7 @@ public interface MovimientoInventarioService {
 
     List<MovimientoInventarioDTO> findByPeriodo(String periodo);
 
+    List<MovimientoInventarioDTO> findByMedicamento(Long medicamentoId);
+
     MovimientoInventarioDTO create(MovimientoInventarioCreateDTO request);
 }

@@ -45,6 +45,9 @@ public class Inventario {
     @Column(name = "fecha_vencimiento")
     private LocalDate fechaVencimiento;
 
+    @Column(name = "fecha_ingreso")
+    private LocalDate fechaIngreso;
+
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 

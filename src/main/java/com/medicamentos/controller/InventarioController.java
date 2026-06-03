@@ -1,19 +1,15 @@
 package com.medicamentos.controller;
 
+import com.medicamentos.dto.request.AjusteInventarioDTO;
 import com.medicamentos.dto.request.InventarioCreateDTO;
 import com.medicamentos.dto.response.InventarioDTO;
+import com.medicamentos.service.AuditLogService;
 import com.medicamentos.service.InventarioService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -23,11 +19,10 @@ import java.util.List;
 public class InventarioController {
 
     private final InventarioService inventarioService;
+    private final AuditLogService auditLogService;
 
     @GetMapping
-    public List<InventarioDTO> findAll() {
-        return inventarioService.findAll();
-    }
+    public List<InventarioDTO> findAll() { return inventarioService.findAll(); }
 
     @GetMapping("/medicine/{medicamentoId}")
     public List<InventarioDTO> findByMedicamento(@PathVariable Long medicamentoId) {
@@ -35,18 +30,30 @@ public class InventarioController {
     }
 
     @GetMapping("/low-stock")
-    public List<InventarioDTO> findLowStock() {
-        return inventarioService.findLowStock();
-    }
+    public List<InventarioDTO> findLowStock() { return inventarioService.findLowStock(); }
+
+    @GetMapping("/expired-pending")
+    public List<InventarioDTO> getVencidosPendientes() { return inventarioService.findVencidosPendientes(); }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public InventarioDTO create(@Valid @RequestBody InventarioCreateDTO request) {
-        return inventarioService.create(request);
+        InventarioDTO result = inventarioService.create(request);
+        auditLogService.log("INGRESO_INVENTARIO", "Inventario",
+                "Lote ingresado: " + result.nombreMedicamento() + " — Stock: " + result.stockActual() + " uds.");
+        return result;
     }
 
     @PutMapping("/{id}")
     public InventarioDTO update(@PathVariable Long id, @Valid @RequestBody InventarioCreateDTO request) {
         return inventarioService.update(id, request);
+    }
+
+    @PostMapping("/adjustments")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void ajustar(@Valid @RequestBody AjusteInventarioDTO request, Authentication authentication) {
+        inventarioService.ajustar(request, authentication.getName());
+        auditLogService.log("AJUSTE_INVENTARIO", "Inventario",
+                "Ajuste tipo " + request.tipoAjuste() + " — " + request.cantidad() + " uds. (lote ID: " + request.inventarioId() + ")");
     }
 }

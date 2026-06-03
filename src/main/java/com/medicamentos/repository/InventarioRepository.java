@@ -5,7 +5,9 @@ import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface InventarioRepository extends JpaRepository<Inventario, Long> {
@@ -17,6 +19,9 @@ public interface InventarioRepository extends JpaRepository<Inventario, Long> {
 
     List<Inventario> findByMedicamentoCodigoSismed(String codigoSismed);
 
-    @Query("select i from Inventario i where i.stockActual <= i.stockMinimo")
+    @Query("SELECT i FROM Inventario i WHERE i.stockActual <= i.stockMinimo")
     List<Inventario> findLowStock();
+
+    @Query("SELECT i FROM Inventario i WHERE i.fechaVencimiento < :hoy AND i.stockActual > 0 ORDER BY i.fechaVencimiento ASC")
+    List<Inventario> findVencidosPendientes(@Param("hoy") LocalDate hoy);
 }

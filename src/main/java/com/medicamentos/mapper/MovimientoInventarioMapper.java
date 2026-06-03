@@ -12,11 +12,9 @@ public class MovimientoInventarioMapper {
         return new MovimientoInventarioDTO(
                 movimiento.getId(),
                 movimiento.getMedicamento().getId(),
-                movimiento.getMedicamento().getCodigoSismed(),
-                movimiento.getMedicamento().getDescripcionSismed(),
+                movimiento.getMedicamento().getNombre(),
                 atencionId,
                 movimiento.getTipoMovimiento(),
-                movimiento.getTipoConsumo(),
                 movimiento.getCantidad(),
                 movimiento.getPeriodo(),
                 movimiento.getObservacion(),

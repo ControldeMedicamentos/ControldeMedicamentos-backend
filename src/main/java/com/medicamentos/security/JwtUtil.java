@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.List;
 
 @Component
 public class JwtUtil {
@@ -25,13 +26,15 @@ public class JwtUtil {
         this.expiration = expiration;
     }
 
-    public String generateToken(Usuario usuario) {
+    public String generateToken(Usuario usuario, List<String> permisos) {
         Date now = new Date();
         Date expiresAt = new Date(now.getTime() + expiration);
         return Jwts.builder()
                 .subject(usuario.getUsername())
                 .claim("rol", usuario.getRol().name())
                 .claim("nombre", usuario.getNombre())
+                .claim("permisos", permisos)
+                .claim("mustChangePassword", Boolean.TRUE.equals(usuario.getMustChangePassword()))
                 .issuedAt(now)
                 .expiration(expiresAt)
                 .signWith(secretKey)

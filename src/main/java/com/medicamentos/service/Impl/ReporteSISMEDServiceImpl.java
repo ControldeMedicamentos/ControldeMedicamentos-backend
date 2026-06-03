@@ -1,15 +1,20 @@
 package com.medicamentos.service.Impl;
 
-import com.medicamentos.domain.enums.TipoConsumo;
+import com.medicamentos.domain.enums.TipoPaciente;
 import com.medicamentos.domain.enums.TipoMovimientoInventario;
+import com.medicamentos.domain.model.Medicamento;
 import com.medicamentos.domain.model.MovimientoInventario;
 import com.medicamentos.dto.response.ReporteSISMEDDTO;
+import com.medicamentos.exception.DuplicateResourceException;
 import com.medicamentos.repository.MovimientoInventarioRepository;
 import com.medicamentos.service.ReporteSISMEDService;
 import com.medicamentos.util.SISMEDExcelExporter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -22,9 +27,10 @@ public class ReporteSISMEDServiceImpl implements ReporteSISMEDService {
     private final SISMEDExcelExporter sismedExcelExporter;
 
     @Override
+    @Transactional(readOnly = true)
     public List<ReporteSISMEDDTO> generarReporteMensual(String periodo) {
         return movimientoInventarioRepository.findByPeriodo(periodo).stream()
-                .collect(Collectors.groupingBy(movimiento -> movimiento.getMedicamento().getCodigoSismed()))
+                .collect(Collectors.groupingBy(m -> m.getMedicamento().getId()))
                 .values()
                 .stream()
                 .map(movimientos -> buildReporte(periodo, movimientos))
@@ -32,6 +38,7 @@ public class ReporteSISMEDServiceImpl implements ReporteSISMEDService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public byte[] generarExcel(String periodo) {
         return sismedExcelExporter.exportar(generarReporteMensual(periodo), periodo);
     }
@@ -43,42 +50,33 @@ public class ReporteSISMEDServiceImpl implements ReporteSISMEDService {
                         MovimientoInventario::getTipoMovimiento,
                         Collectors.summingInt(MovimientoInventario::getCantidad)
                 ));
-        int saldoInicial = total(totales, TipoMovimientoInventario.SALDO_INICIAL);
-        int ingresos = total(totales, TipoMovimientoInventario.INGRESO);
-        int reingresos = total(totales, TipoMovimientoInventario.REINGRESO);
-        int venta = totalConsumo(movimientos, TipoConsumo.VENTA);
-        int sis = totalConsumo(movimientos, TipoConsumo.SIS);
-        int intersanidad = totalConsumo(movimientos, TipoConsumo.INTERSANIDAD);
-        int factoresPerdida = totalConsumo(movimientos, TipoConsumo.FACTORES_PERDIDA);
-        int defuncionNacimiento = totalConsumo(movimientos, TipoConsumo.DEFUNCION_NACIMIENTO);
-        int exonerado = totalConsumo(movimientos, TipoConsumo.EXONERADO);
-        int soat = totalConsumo(movimientos, TipoConsumo.SOAT);
-        int creditoHospitalario = totalConsumo(movimientos, TipoConsumo.CREDITO_HOSPITALARIO);
-        int otroConvenio = totalConsumo(movimientos, TipoConsumo.OTRO_CONVENIO);
-        int consumos = venta + sis + intersanidad + factoresPerdida + defuncionNacimiento + exonerado
-                + soat + creditoHospitalario + otroConvenio;
-        int devoluciones = total(totales, TipoMovimientoInventario.DEVOLUCION);
-        int vencidos = total(totales, TipoMovimientoInventario.VENCIDO);
-        int merma = total(totales, TipoMovimientoInventario.MERMA);
-        int distribucion = total(totales, TipoMovimientoInventario.DISTRIBUCION);
-        int transferencia = total(totales, TipoMovimientoInventario.TRANSFERENCIA);
-        int stockFinal = saldoInicial + ingresos + reingresos - consumos - devoluciones - vencidos - merma - distribucion - transferencia;
+
+        int saldoInicial    = total(totales, TipoMovimientoInventario.SALDO_INICIAL);
+        int ingresos        = total(totales, TipoMovimientoInventario.INGRESO);
+        int reingresos      = total(totales, TipoMovimientoInventario.REINGRESO);
+        int alumno          = totalPorTipoPaciente(movimientos, TipoPaciente.ESTUDIANTE);
+        int docente         = totalPorTipoPaciente(movimientos, TipoPaciente.DOCENTE);
+        int administrativo  = totalPorTipoPaciente(movimientos, TipoPaciente.ADMINISTRATIVO);
+        int invitado        = totalPorTipoPaciente(movimientos, TipoPaciente.INVITADO);
+        int consumos        = alumno + docente + administrativo + invitado;
+        int devoluciones    = total(totales, TipoMovimientoInventario.DEVOLUCION);
+        int vencidos        = total(totales, TipoMovimientoInventario.VENCIDO);
+        int merma           = total(totales, TipoMovimientoInventario.MERMA);
+        int distribucion    = total(totales, TipoMovimientoInventario.DISTRIBUCION);
+        int transferencia   = total(totales, TipoMovimientoInventario.TRANSFERENCIA);
+        int stockFinal      = saldoInicial + ingresos + reingresos - consumos
+                            - devoluciones - vencidos - merma - distribucion - transferencia;
+
         return new ReporteSISMEDDTO(
                 periodo,
-                first.getMedicamento().getCodigoSismed(),
-                first.getMedicamento().getDescripcionSismed(),
+                first.getMedicamento().getNombre(),
                 saldoInicial,
                 ingresos,
                 reingresos,
-                venta,
-                sis,
-                intersanidad,
-                factoresPerdida,
-                defuncionNacimiento,
-                exonerado,
-                soat,
-                creditoHospitalario,
-                otroConvenio,
+                alumno,
+                docente,
+                administrativo,
+                invitado,
                 consumos,
                 devoluciones,
                 vencidos,
@@ -93,10 +91,68 @@ public class ReporteSISMEDServiceImpl implements ReporteSISMEDService {
         return totales.getOrDefault(tipo, 0);
     }
 
-    private int totalConsumo(List<MovimientoInventario> movimientos, TipoConsumo tipoConsumo) {
+    @Override
+    @Transactional
+    public int cerrarMes(String periodo) {
+        YearMonth ym = YearMonth.parse(periodo, DateTimeFormatter.ofPattern("yyyyMM"));
+        String nextPeriodo = ym.plusMonths(1).format(DateTimeFormatter.ofPattern("yyyyMM"));
+
+        if (movimientoInventarioRepository.existsByPeriodoAndTipoMovimiento(
+                nextPeriodo, TipoMovimientoInventario.SALDO_INICIAL)) {
+            throw new DuplicateResourceException("El período " + periodo + " ya fue cerrado.");
+        }
+
+        List<MovimientoInventario> todos = movimientoInventarioRepository.findByPeriodo(periodo);
+
+        Map<Long, List<MovimientoInventario>> porMedicamento = todos.stream()
+                .collect(Collectors.groupingBy(m -> m.getMedicamento().getId()));
+
+        int count = 0;
+        for (Map.Entry<Long, List<MovimientoInventario>> entry : porMedicamento.entrySet()) {
+            List<MovimientoInventario> movs = entry.getValue();
+            int stockFinal = calcularStockFinal(movs);
+            if (stockFinal < 0) stockFinal = 0;
+
+            Medicamento medicamento = movs.get(0).getMedicamento();
+            MovimientoInventario saldo = new MovimientoInventario();
+            saldo.setMedicamento(medicamento);
+            saldo.setTipoMovimiento(TipoMovimientoInventario.SALDO_INICIAL);
+            saldo.setCantidad(stockFinal);
+            saldo.setPeriodo(nextPeriodo);
+            saldo.setObservacion("Saldo inicial · cierre de " + periodo);
+            saldo.setUsuarioRegistro("SISTEMA");
+            movimientoInventarioRepository.save(saldo);
+            count++;
+        }
+        return count;
+    }
+
+    private int calcularStockFinal(List<MovimientoInventario> movimientos) {
+        Map<TipoMovimientoInventario, Integer> totales = movimientos.stream()
+                .collect(Collectors.groupingBy(
+                        MovimientoInventario::getTipoMovimiento,
+                        Collectors.summingInt(MovimientoInventario::getCantidad)
+                ));
+        int saldoInicial = totales.getOrDefault(TipoMovimientoInventario.SALDO_INICIAL, 0);
+        int ingresos     = totales.getOrDefault(TipoMovimientoInventario.INGRESO, 0);
+        int reingresos   = totales.getOrDefault(TipoMovimientoInventario.REINGRESO, 0);
+        int consumos     = movimientos.stream()
+                .filter(m -> m.getTipoMovimiento() == TipoMovimientoInventario.CONSUMO)
+                .mapToInt(MovimientoInventario::getCantidad).sum();
+        int devoluciones = totales.getOrDefault(TipoMovimientoInventario.DEVOLUCION, 0);
+        int vencidos     = totales.getOrDefault(TipoMovimientoInventario.VENCIDO, 0);
+        int merma        = totales.getOrDefault(TipoMovimientoInventario.MERMA, 0);
+        int distribucion = totales.getOrDefault(TipoMovimientoInventario.DISTRIBUCION, 0);
+        int transferencia= totales.getOrDefault(TipoMovimientoInventario.TRANSFERENCIA, 0);
+        return saldoInicial + ingresos + reingresos - consumos - devoluciones - vencidos - merma - distribucion - transferencia;
+    }
+
+    private int totalPorTipoPaciente(List<MovimientoInventario> movimientos, TipoPaciente tipoPaciente) {
         return movimientos.stream()
-                .filter(movimiento -> movimiento.getTipoMovimiento() == TipoMovimientoInventario.CONSUMO)
-                .filter(movimiento -> movimiento.getTipoConsumo() == tipoConsumo)
+                .filter(m -> m.getTipoMovimiento() == TipoMovimientoInventario.CONSUMO)
+                .filter(m -> m.getAtencion() != null)
+                .filter(m -> m.getAtencion().getPaciente() != null)
+                .filter(m -> tipoPaciente == m.getAtencion().getPaciente().getTipoPaciente())
                 .mapToInt(MovimientoInventario::getCantidad)
                 .sum();
     }

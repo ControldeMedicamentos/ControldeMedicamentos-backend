@@ -9,29 +9,35 @@ import org.springframework.stereotype.Component;
 public class MedicamentoMapper {
 
     public Medicamento toEntity(MedicamentoCreateDTO dto) {
-        Medicamento medicamento = new Medicamento();
-        medicamento.setCodigoSismed(dto.codigoSismed());
-        medicamento.setCodigoSiga(dto.codigoSiga());
-        medicamento.setDescripcionSismed(dto.descripcionSismed());
-        medicamento.setPresentacionFrasco(dto.presentacionFrasco());
-        medicamento.setDescripcionCorta(dto.descripcionCorta());
-        medicamento.setConversion(dto.conversion() == null ? 1 : dto.conversion());
-        medicamento.setActivo(dto.activo() == null || dto.activo());
-        return medicamento;
+        Medicamento m = new Medicamento();
+        m.setNombre(dto.nombre().trim());
+        m.setRegistroSanitario(dto.registroSanitario());
+        m.setTipoProducto(dto.tipoProducto());
+        m.setPresentacion(dto.presentacion());
+        m.setFabricante(dto.fabricante());
+        m.setPaisFabricacion(dto.paisFabricacion());
+        m.setPrecioUnitario(dto.precioUnitario());
+        m.setStockMinimo(dto.stockMinimo() != null ? dto.stockMinimo() : 0);
+        m.setActivo(dto.activo() == null || dto.activo());
+        return m;
     }
 
-    public MedicamentoDTO toDTO(Medicamento medicamento) {
+    public MedicamentoDTO toDTO(Medicamento m) {
         return new MedicamentoDTO(
-                medicamento.getId(),
-                medicamento.getCodigoSismed(),
-                medicamento.getCodigoSiga(),
-                medicamento.getDescripcionSismed(),
-                medicamento.getPresentacionFrasco(),
-                medicamento.getDescripcionCorta(),
-                medicamento.getConversion(),
-                medicamento.getActivo(),
-                medicamento.getCreatedAt(),
-                medicamento.getUpdatedAt()
+                m.getId(),
+                m.getNombre(),
+                m.getRegistroSanitario(),
+                m.getTipoProducto(),
+                m.getPresentacion(),
+                m.getFabricante(),
+                m.getPaisFabricacion(),
+                m.getPrecioUnitario(),
+                m.getStockMinimo(),
+                m.getCodigoSismed(),
+                m.getDescripcionSismed(),
+                m.getActivo(),
+                m.getCreatedAt(),
+                m.getUpdatedAt()
         );
     }
 }

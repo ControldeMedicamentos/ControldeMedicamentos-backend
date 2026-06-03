@@ -3,6 +3,7 @@ package com.medicamentos.service;
 import com.medicamentos.domain.enums.TipoConsumo;
 import com.medicamentos.domain.model.Atencion;
 import com.medicamentos.domain.model.MovimientoInventario;
+import com.medicamentos.dto.request.AjusteInventarioDTO;
 import com.medicamentos.dto.request.InventarioCreateDTO;
 import com.medicamentos.dto.response.InventarioDTO;
 
@@ -16,9 +17,13 @@ public interface InventarioService {
 
     List<InventarioDTO> findLowStock();
 
+    List<InventarioDTO> findVencidosPendientes();
+
     InventarioDTO create(InventarioCreateDTO request);
 
     InventarioDTO update(Long id, InventarioCreateDTO request);
+
+    void ajustar(AjusteInventarioDTO request, String usuarioRegistro);
 
     MovimientoInventario descontarStock(Long medicamentoId, Integer cantidad);
 

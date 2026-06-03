@@ -4,6 +4,7 @@ import com.medicamentos.domain.enums.TipoDiagnostico;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
@@ -11,7 +12,7 @@ import java.util.List;
 
 public record AtencionCreateDTO(
         @NotNull Long pacienteId,
-        @NotNull LocalDate fechaEvaluacion,
+        @NotNull @PastOrPresent LocalDate fechaEvaluacion,
         @NotBlank @Size(max = 300) String motivo,
         String antecedentes,
         String inmunizaciones,
