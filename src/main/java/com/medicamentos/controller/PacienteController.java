@@ -15,6 +15,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -41,6 +44,18 @@ public class PacienteController {
     public List<PacienteDTO> findAll() {
         auditLogService.log("CONSULTAR_PACIENTES", "Pacientes", "Consulta del listado de pacientes");
         return pacienteService.findAll();
+    }
+
+    @GetMapping("/page")
+    public Page<PacienteDTO> findPage(
+            @RequestParam(defaultValue = "") String search,
+            @RequestParam(defaultValue = "activos") String estado,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        var pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100),
+                Sort.by("nombresApellidos").ascending());
+        auditLogService.log("CONSULTAR_PACIENTES", "Pacientes", "Consulta paginada de pacientes");
+        return pacienteService.findPage(search, estado, pageable);
     }
 
     @GetMapping("/{id}")

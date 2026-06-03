@@ -7,6 +7,7 @@ public record EmpleadoDTO(
         String username,
         String nombre,
         String email,
+        String dni,
         String rol,
         boolean activo,
         LocalDateTime createdAt

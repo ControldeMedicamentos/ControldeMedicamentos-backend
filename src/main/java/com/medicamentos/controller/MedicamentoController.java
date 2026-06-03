@@ -6,6 +6,9 @@ import com.medicamentos.service.AuditLogService;
 import com.medicamentos.service.MedicamentoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,6 +25,17 @@ public class MedicamentoController {
     @GetMapping
     public List<MedicamentoDTO> findAll() {
         return medicamentoService.findAll();
+    }
+
+    @GetMapping("/page")
+    public Page<MedicamentoDTO> findPage(
+            @RequestParam(defaultValue = "") String search,
+            @RequestParam(defaultValue = "activos") String estado,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        var pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100),
+                Sort.by("nombre").ascending());
+        return medicamentoService.findPage(search, estado, pageable);
     }
 
     @GetMapping("/{id}")

@@ -10,6 +10,8 @@ import com.medicamentos.repository.InventarioRepository;
 import com.medicamentos.repository.MedicamentoRepository;
 import com.medicamentos.service.MedicamentoService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,12 @@ public class MedicamentoServiceImpl implements MedicamentoService {
     @Override
     public List<MedicamentoDTO> findAll() {
         return medicamentoRepository.findAll().stream().map(medicamentoMapper::toDTO).toList();
+    }
+
+    @Override
+    public Page<MedicamentoDTO> findPage(String search, String estado, Pageable pageable) {
+        return medicamentoRepository.findPage(normalize(search), normalizeEstado(estado), pageable)
+                .map(medicamentoMapper::toDTO);
     }
 
     @Override
@@ -87,5 +95,14 @@ public class MedicamentoServiceImpl implements MedicamentoService {
         }
         inventarioRepository.deleteAll(inventarioRepository.findByMedicamentoId(id));
         medicamentoRepository.deleteById(id);
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private String normalizeEstado(String estado) {
+        if ("inactivos".equals(estado) || "todos".equals(estado)) return estado;
+        return "activos";
     }
 }

@@ -10,11 +10,16 @@ import com.medicamentos.repository.UsuarioRepository;
 import com.medicamentos.service.EmailService;
 import com.medicamentos.service.EmpleadoService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +28,9 @@ public class EmpleadoServiceImpl implements EmpleadoService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+
+    @Value("${app.frontend.url:http://localhost:4200}")
+    private String frontendUrl;
 
     @Override
     @Transactional(readOnly = true)
@@ -34,22 +42,34 @@ public class EmpleadoServiceImpl implements EmpleadoService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Page<EmpleadoDTO> findPage(String search, String estado, Pageable pageable) {
+        return usuarioRepository.findPage(normalize(search), normalizeEstado(estado), pageable)
+                .map(this::toDTO);
+    }
+
+    @Override
     @Transactional
     public EmpleadoDTO create(EmpleadoCreateDTO dto) {
         if (usuarioRepository.existsByEmail(dto.email())) {
             throw new DuplicateResourceException("El email '" + dto.email() + "' ya está registrado");
         }
         String username = generarUsername(dto.email());
+        String token = UUID.randomUUID().toString();
         Usuario u = new Usuario();
         u.setUsername(username);
-        u.setPassword(passwordEncoder.encode(dto.dni()));
+        u.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
         u.setNombre(dto.nombre().trim());
         u.setEmail(dto.email().trim().toLowerCase());
+        u.setDni(dto.dni());
         u.setRol(dto.rol());
         u.setActivo(true);
         u.setMustChangePassword(true);
+        u.setResetToken(token);
+        u.setResetTokenExpiry(LocalDateTime.now().plusHours(48));
         EmpleadoDTO resultado = toDTO(usuarioRepository.save(u));
-        emailService.sendBienvenida(dto.nombre().trim(), dto.email().trim().toLowerCase(), dto.dni());
+        String resetLink = frontendUrl + "/restablecer-contrasena?token=" + token;
+        emailService.sendResetPassword(dto.nombre().trim(), dto.email().trim().toLowerCase(), resetLink);
         return resultado;
     }
 
@@ -76,6 +96,9 @@ public class EmpleadoServiceImpl implements EmpleadoService {
 
         u.setNombre(dto.nombre().trim());
         u.setEmail(dto.email().trim().toLowerCase());
+        if (dto.dni() != null && !dto.dni().isBlank()) {
+            u.setDni(dto.dni());
+        }
         u.setRol(dto.rol());
         return toDTO(usuarioRepository.save(u));
     }
@@ -95,9 +118,19 @@ public class EmpleadoServiceImpl implements EmpleadoService {
                 u.getUsername(),
                 u.getNombre(),
                 u.getEmail(),
+                u.getDni(),
                 u.getRol().name(),
                 u.getActivo(),
                 u.getCreatedAt()
         );
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private String normalizeEstado(String estado) {
+        if ("inactivos".equals(estado) || "todos".equals(estado)) return estado;
+        return "activos";
     }
 }

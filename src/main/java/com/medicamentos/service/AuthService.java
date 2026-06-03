@@ -12,4 +12,10 @@ public interface AuthService {
     AuthResponseDTO register(RegisterRequestDTO request);
 
     AuthResponseDTO changePassword(String username, ChangePasswordDTO dto);
+
+    void resetPassword(String token, String newPassword);
+
+    String getNombreByResetToken(String token);
+
+    java.util.List<String> getPermisos(String username);
 }

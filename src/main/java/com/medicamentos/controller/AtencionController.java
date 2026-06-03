@@ -14,6 +14,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -63,6 +66,20 @@ public class AtencionController {
         auditLogService.log("CONSULTAR_ATENCIONES", "Atenciones",
                 "Consulta de atenciones del " + desde + " al " + hasta);
         return atencionService.findByFecha(desde, hasta);
+    }
+
+    @GetMapping("/page")
+    public Page<AtencionDTO> findPageByFecha(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
+            @RequestParam(defaultValue = "") String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        var pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100),
+                Sort.by(Sort.Order.desc("fechaEvaluacion"), Sort.Order.desc("id")));
+        auditLogService.log("CONSULTAR_ATENCIONES", "Atenciones",
+                "Consulta paginada de atenciones del " + desde + " al " + hasta);
+        return atencionService.findPageByFecha(desde, hasta, search, pageable);
     }
 
     @PostMapping

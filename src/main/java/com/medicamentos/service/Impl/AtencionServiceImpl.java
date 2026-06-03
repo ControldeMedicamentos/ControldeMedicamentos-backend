@@ -16,6 +16,8 @@ import com.medicamentos.repository.PacienteRepository;
 import com.medicamentos.service.AtencionService;
 import com.medicamentos.service.InventarioService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,6 +47,12 @@ public class AtencionServiceImpl implements AtencionService {
     @Override
     public List<AtencionDTO> findByFecha(LocalDate desde, LocalDate hasta) {
         return atencionRepository.findByFechaEvaluacionBetween(desde, hasta).stream().map(this::toDTO).toList();
+    }
+
+    @Override
+    public Page<AtencionDTO> findPageByFecha(LocalDate desde, LocalDate hasta, String search, Pageable pageable) {
+        return atencionRepository.findPageByFecha(desde, hasta, normalize(search), pageable)
+                .map(this::toDTO);
     }
 
     @Override
@@ -124,5 +132,9 @@ public class AtencionServiceImpl implements AtencionService {
         consumo.setCantidadConsumida(request.cantidadConsumida());
         consumo.setTipoConsumo(request.tipoConsumo());
         return consumo;
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.trim();
     }
 }

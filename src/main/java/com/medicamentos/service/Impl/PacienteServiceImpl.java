@@ -8,6 +8,8 @@ import com.medicamentos.mapper.PacienteMapper;
 import com.medicamentos.repository.PacienteRepository;
 import com.medicamentos.service.PacienteService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,6 +24,12 @@ public class PacienteServiceImpl implements PacienteService {
     @Override
     public List<PacienteDTO> findAll() {
         return pacienteRepository.findAll().stream().map(pacienteMapper::toDTO).toList();
+    }
+
+    @Override
+    public Page<PacienteDTO> findPage(String search, String estado, Pageable pageable) {
+        return pacienteRepository.findPage(normalize(search), normalizeEstado(estado), pageable)
+                .map(pacienteMapper::toDTO);
     }
 
     @Override
@@ -40,6 +48,7 @@ public class PacienteServiceImpl implements PacienteService {
 
     @Override
     public PacienteDTO create(PacienteCreateDTO request) {
+        validateDocumento(request);
         if (pacienteRepository.existsByNroDocumento(request.nroDocumento())) {
             throw new DuplicateResourceException("Ya existe un paciente con documento: " + request.nroDocumento());
         }
@@ -48,6 +57,7 @@ public class PacienteServiceImpl implements PacienteService {
 
     @Override
     public PacienteDTO update(Long id, PacienteCreateDTO request) {
+        validateDocumento(request);
         var paciente = pacienteRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Paciente no encontrado: " + id));
 
@@ -75,5 +85,26 @@ public class PacienteServiceImpl implements PacienteService {
                 .orElseThrow(() -> new ResourceNotFoundException("Paciente no encontrado: " + id));
         paciente.setActivo(!paciente.isActivo());
         return pacienteMapper.toDTO(pacienteRepository.save(paciente));
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private String normalizeEstado(String estado) {
+        if ("inactivos".equals(estado) || "todos".equals(estado)) return estado;
+        return "activos";
+    }
+
+    private void validateDocumento(PacienteCreateDTO request) {
+        String documento = request.nroDocumento() == null ? "" : request.nroDocumento().trim();
+        boolean valid = switch (request.tipoDocumento()) {
+            case DNI -> documento.matches("^\\d{8}$");
+            case CARNET_EXTRANJERIA -> documento.matches("^[A-Za-z0-9]{9,12}$");
+            case PASAPORTE -> documento.matches("^[A-Za-z0-9]{6,15}$");
+        };
+        if (!valid) {
+            throw new IllegalArgumentException("Documento inválido para el tipo seleccionado.");
+        }
     }
 }

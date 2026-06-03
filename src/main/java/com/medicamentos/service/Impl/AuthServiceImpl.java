@@ -8,6 +8,8 @@ import com.medicamentos.dto.response.AuthResponseDTO;
 import com.medicamentos.exception.DuplicateResourceException;
 import com.medicamentos.exception.ResourceNotFoundException;
 import com.medicamentos.repository.UsuarioRepository;
+import com.medicamentos.repository.RolVistaPermisoRepository;
+import com.medicamentos.repository.RoleRepository;
 import com.medicamentos.security.JwtUtil;
 import com.medicamentos.service.AuthService;
 import lombok.RequiredArgsConstructor;
@@ -17,11 +19,15 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
     private final UsuarioRepository usuarioRepository;
+    private final RoleRepository roleRepository;
+    private final RolVistaPermisoRepository rolVistaPermisoRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
@@ -53,6 +59,35 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    public List<String> getPermisos(String username) {
+        return usuarioRepository.findByUsername(username)
+                .map(this::getPermisos)
+                .orElse(List.of());
+    }
+
+    @Override
+    public String getNombreByResetToken(String token) {
+        return usuarioRepository.findByResetToken(token)
+                .map(Usuario::getNombre)
+                .orElseThrow(() -> new ResourceNotFoundException("Token inválido o expirado"));
+    }
+
+    @Override
+    public void resetPassword(String token, String newPassword) {
+        Usuario usuario = usuarioRepository.findByResetToken(token)
+                .orElseThrow(() -> new ResourceNotFoundException("Token inválido o expirado"));
+        if (usuario.getResetTokenExpiry() == null
+                || usuario.getResetTokenExpiry().isBefore(java.time.LocalDateTime.now())) {
+            throw new IllegalArgumentException("El enlace ha expirado. Solicita un nuevo acceso al administrador.");
+        }
+        usuario.setPassword(passwordEncoder.encode(newPassword));
+        usuario.setResetToken(null);
+        usuario.setResetTokenExpiry(null);
+        usuario.setMustChangePassword(false);
+        usuarioRepository.save(usuario);
+    }
+
+    @Override
     public AuthResponseDTO register(RegisterRequestDTO request) {
         if (usuarioRepository.existsByUsername(request.username())) {
             throw new DuplicateResourceException("Ya existe un usuario con username: " + request.username());
@@ -71,12 +106,33 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private AuthResponseDTO buildResponse(Usuario usuario) {
+        List<String> permisos = getPermisos(usuario);
         return new AuthResponseDTO(
-                jwtUtil.generateToken(usuario),
+                jwtUtil.generateToken(usuario, permisos),
                 jwtUtil.getExpiration(),
                 usuario.getUsername(),
                 usuario.getRol(),
+                permisos,
                 Boolean.TRUE.equals(usuario.getMustChangePassword())
         );
+    }
+
+    private List<String> getPermisos(Usuario usuario) {
+        if (usuario.getRol() == com.medicamentos.domain.enums.RolUsuario.ADMIN) {
+            return List.of("*");
+        }
+        return roleRepository.findByName("ROLE_" + usuario.getRol().name())
+                .map(role -> {
+                    List<String> result = new java.util.ArrayList<>();
+                    for (var permiso : rolVistaPermisoRepository.findByRolId(role.getId())) {
+                        String ruta = permiso.getVista().getRuta();
+                        if (permiso.isLeer())      result.add(ruta);
+                        if (permiso.isEscribir())  result.add(ruta + ":w");
+                        if (permiso.isModificar()) result.add(ruta + ":e");
+                        if (permiso.isEliminar())  result.add(ruta + ":d");
+                    }
+                    return result;
+                })
+                .orElse(List.of());
     }
 }

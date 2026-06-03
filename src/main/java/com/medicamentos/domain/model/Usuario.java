@@ -39,6 +39,9 @@ public class Usuario {
     @Column(nullable = false, unique = true, length = 120)
     private String email;
 
+    @Column(length = 8)
+    private String dni;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private RolUsuario rol;
@@ -48,6 +51,12 @@ public class Usuario {
 
     @Column(name = "must_change_password")
     private Boolean mustChangePassword = false;
+
+    @Column(name = "reset_token", length = 100)
+    private String resetToken;
+
+    @Column(name = "reset_token_expiry")
+    private LocalDateTime resetTokenExpiry;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
