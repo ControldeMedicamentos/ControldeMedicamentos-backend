@@ -11,4 +11,6 @@ public interface ReporteSISMEDService {
     byte[] generarExcel(String periodo);
 
     int cerrarMes(String periodo);
+
+    boolean isPeriodoCerrado(String periodo);
 }
