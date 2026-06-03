@@ -21,6 +21,11 @@ public class ReporteController {
     private final ReporteSISMEDService reporteSISMEDService;
     private final AuditLogService auditLogService;
 
+    @GetMapping("/sismed/{periodo}/cerrado")
+    public java.util.Map<String, Boolean> isPeriodoCerrado(@PathVariable String periodo) {
+        return java.util.Map.of("cerrado", reporteSISMEDService.isPeriodoCerrado(periodo));
+    }
+
     @GetMapping("/sismed/{periodo}")
     public List<ReporteSISMEDDTO> generarReporteMensual(@PathVariable String periodo) {
         auditLogService.log("CONSULTAR_REPORTE", "Reportes",

@@ -92,6 +92,15 @@ public class ReporteSISMEDServiceImpl implements ReporteSISMEDService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public boolean isPeriodoCerrado(String periodo) {
+        YearMonth ym = YearMonth.parse(periodo, DateTimeFormatter.ofPattern("yyyyMM"));
+        String nextPeriodo = ym.plusMonths(1).format(DateTimeFormatter.ofPattern("yyyyMM"));
+        return movimientoInventarioRepository.existsByPeriodoAndTipoMovimiento(
+                nextPeriodo, TipoMovimientoInventario.SALDO_INICIAL);
+    }
+
+    @Override
     @Transactional
     public int cerrarMes(String periodo) {
         YearMonth ym = YearMonth.parse(periodo, DateTimeFormatter.ofPattern("yyyyMM"));
