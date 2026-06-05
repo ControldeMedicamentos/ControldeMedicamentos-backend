@@ -1,13 +1,17 @@
 package com.medicamentos.config;
 
+import com.medicamentos.domain.enums.RolUsuario;
 import com.medicamentos.domain.model.Role;
+import com.medicamentos.domain.model.Usuario;
 import com.medicamentos.domain.model.Vista;
 import com.medicamentos.repository.RoleRepository;
+import com.medicamentos.repository.UsuarioRepository;
 import com.medicamentos.repository.VistaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -17,15 +21,33 @@ public class DataSeeder {
 
     private final RoleRepository roleRepository;
     private final VistaRepository vistaRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @EventListener(ApplicationReadyEvent.class)
     public void seed() {
         try {
             seedRoleAdmin();
             seedVistas();
+            seedUsuarioAdmin();
             log.info("DataSeeder completado correctamente");
         } catch (Exception e) {
             log.error("Error en DataSeeder: {}", e.getMessage(), e);
+        }
+    }
+
+    private void seedUsuarioAdmin() {
+        if (!usuarioRepository.existsByEmail("admin@sismed.pe")) {
+            Usuario admin = new Usuario();
+            admin.setUsername("admin");
+            admin.setPassword(passwordEncoder.encode("admin123"));
+            admin.setNombre("Administrador");
+            admin.setEmail("admin@sismed.pe");
+            admin.setRol(RolUsuario.ADMIN);
+            admin.setActivo(true);
+            admin.setMustChangePassword(false);
+            usuarioRepository.save(admin);
+            log.info("Usuario admin creado (admin@sismed.pe / admin123)");
         }
     }
 
