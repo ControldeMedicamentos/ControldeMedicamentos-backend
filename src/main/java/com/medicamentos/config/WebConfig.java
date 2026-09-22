@@ -1,19 +1,38 @@
 package com.medicamentos.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.util.Arrays;
+
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
+    @Value("${app.cors.allowed-origins:http://localhost:4200}")
+    private String allowedOrigins;
+
     @Override
     public void addCorsMappings(CorsRegistry registry) {
+
+        String[] origins = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .toArray(String[]::new);
+
         registry.addMapping("/**")
-                .allowedOrigins("http://localhost:4200", "http://localhost:3000")
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
+                .allowedOrigins(origins)
+                .allowedMethods(
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "DELETE",
+                        "PATCH",
+                        "OPTIONS"
+                )
+                .allowedHeaders("*")
+                .exposedHeaders("Content-Disposition")
                 .allowCredentials(true)
                 .maxAge(3600);
     }
-
 }

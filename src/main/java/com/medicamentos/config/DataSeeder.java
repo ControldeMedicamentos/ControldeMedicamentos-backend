@@ -13,6 +13,7 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Value;
 
 @Slf4j
 @Component
@@ -23,6 +24,18 @@ public class DataSeeder {
     private final VistaRepository vistaRepository;
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
+
+    @Value("${app.bootstrap-admin.enabled:false}")
+    private boolean bootstrapAdminEnabled;
+
+    @Value("${app.bootstrap-admin.username:}")
+    private String bootstrapAdminUsername;
+
+    @Value("${app.bootstrap-admin.email:}")
+    private String bootstrapAdminEmail;
+
+    @Value("${app.bootstrap-admin.password:}")
+    private String bootstrapAdminPassword;
 
     @EventListener(ApplicationReadyEvent.class)
     public void seed() {
@@ -37,18 +50,59 @@ public class DataSeeder {
     }
 
     private void seedUsuarioAdmin() {
-        if (!usuarioRepository.existsByEmail("admin@sismed.pe")) {
-            Usuario admin = new Usuario();
-            admin.setUsername("admin");
-            admin.setPassword(passwordEncoder.encode("admin123"));
-            admin.setNombre("Administrador");
-            admin.setEmail("admin@sismed.pe");
-            admin.setRol(RolUsuario.ADMIN);
-            admin.setActivo(true);
-            admin.setMustChangePassword(false);
-            usuarioRepository.save(admin);
-            log.info("Usuario admin creado (admin@sismed.pe / admin123)");
+
+        // Si el bootstrap está deshabilitado, no hace nada
+        if (!bootstrapAdminEnabled) {
+            log.info("Bootstrap de administrador deshabilitado");
+            return;
         }
+
+        // Validación de variables necesarias
+        if (bootstrapAdminUsername == null || bootstrapAdminUsername.isBlank()
+            || bootstrapAdminEmail == null || bootstrapAdminEmail.isBlank()
+            || bootstrapAdminPassword == null || bootstrapAdminPassword.isBlank()) {
+
+            log.error("No se puede crear el administrador inicial: faltan variables de entorno");
+            return;
+        }
+
+        // Evita duplicado por username
+        if (usuarioRepository.existsByUsername(bootstrapAdminUsername)) {
+            log.warn(
+                    "No se crea administrador inicial: el username '{}' ya existe",
+                    bootstrapAdminUsername
+            );
+            return;
+        }
+
+        // Evita duplicado por correo
+        if (usuarioRepository.existsByEmail(bootstrapAdminEmail)) {
+            log.warn(
+                    "No se crea administrador inicial: el correo '{}' ya existe",
+                    bootstrapAdminEmail
+            );
+            return;
+        }
+
+        // Crear administrador inicial
+        Usuario admin = new Usuario();
+
+        admin.setUsername(bootstrapAdminUsername);
+        admin.setPassword(
+            passwordEncoder.encode(bootstrapAdminPassword)
+        );
+
+        admin.setNombre("Administrador");
+        admin.setEmail(bootstrapAdminEmail);
+        admin.setRol(RolUsuario.ADMIN);
+        admin.setActivo(true);
+
+        // Obliga a cambiar la contraseña en el primer ingreso
+        admin.setMustChangePassword(true);
+
+        usuarioRepository.save(admin);
+
+        log.info("Administrador inicial creado correctamente: {}",bootstrapAdminEmail);
     }
 
     private void seedRoleAdmin() {
