@@ -29,14 +29,16 @@ public class RoleController {
     @ResponseStatus(HttpStatus.CREATED)
     public RolDTO createRole(@RequestBody Map<String, String> body) {
         RolDTO result = roleService.createRole(body.get("name"), body.get("descripcion"));
-        auditLogService.log("CREAR_ROL", "Roles", "Rol creado: " + result.getName());
+        auditLogService.log("CREAR_ROL", "Roles", "Rol creado: " + result.getName(),
+                "ROL", result.getId().toString());
         return result;
     }
 
     @PutMapping("/{id}")
     public RolDTO updateRole(@PathVariable Integer id, @RequestBody Map<String, String> body) {
         RolDTO result = roleService.updateRole(id, body.get("name"), body.get("descripcion"));
-        auditLogService.log("ACTUALIZAR_ROL", "Roles", "Rol actualizado: " + result.getName());
+        auditLogService.log("ACTUALIZAR_ROL", "Roles", "Rol actualizado: " + result.getName(),
+                "ROL", result.getId().toString());
         return result;
     }
 
@@ -44,7 +46,7 @@ public class RoleController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteRole(@PathVariable Integer id) {
         roleService.deleteRole(id);
-        auditLogService.log("ELIMINAR_ROL", "Roles", "Rol ID " + id + " eliminado");
+        auditLogService.log("ELIMINAR_ROL", "Roles", "Rol eliminado", "ROL", id.toString());
     }
 
     @GetMapping("/{id}/vistas")
@@ -56,7 +58,8 @@ public class RoleController {
     public List<RolVistaPermisoDTO> saveVistas(@PathVariable Integer id,
                                                 @RequestBody List<RolVistaPermisoDTO> permisos) {
         List<RolVistaPermisoDTO> result = roleService.saveVistasByRole(id, permisos);
-        auditLogService.log("GUARDAR_PERMISOS", "Roles", "Permisos actualizados para rol ID " + id);
+        auditLogService.log("GUARDAR_PERMISOS", "Roles",
+                "Permisos actualizados — " + result.size() + " vistas", "ROL", id.toString());
         return result;
     }
 }

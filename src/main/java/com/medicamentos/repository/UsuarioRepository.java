@@ -1,6 +1,7 @@
 package com.medicamentos.repository;
 
 import com.medicamentos.domain.model.Usuario;
+import com.medicamentos.domain.enums.RolUsuario;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -20,6 +21,8 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     Optional<Usuario> findByEmail(String email);
 
     Optional<Usuario> findByResetToken(String resetToken);
+
+    long countByRolAndActivoTrueAndResetTokenIsNull(RolUsuario rol);
 
     @Query("""
             SELECT u FROM Usuario u

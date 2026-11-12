@@ -9,8 +9,13 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface InventarioRepository extends JpaRepository<Inventario, Long> {
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT i FROM Inventario i WHERE i.id = :id")
+    Optional<Inventario> findByIdForUpdate(@Param("id") Long id);
 
     List<Inventario> findByMedicamentoId(Long medicamentoId);
 

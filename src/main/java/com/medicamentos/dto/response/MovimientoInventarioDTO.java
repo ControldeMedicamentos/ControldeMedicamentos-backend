@@ -3,6 +3,7 @@ package com.medicamentos.dto.response;
 import com.medicamentos.domain.enums.TipoMovimientoInventario;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record MovimientoInventarioDTO(
         Long id,
@@ -14,6 +15,7 @@ public record MovimientoInventarioDTO(
         String periodo,
         String observacion,
         String usuarioRegistro,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        List<MovimientoLoteDTO> lotes
 ) {
 }

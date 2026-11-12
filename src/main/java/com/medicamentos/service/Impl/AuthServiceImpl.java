@@ -19,6 +19,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -67,19 +68,12 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public String getNombreByResetToken(String token) {
-        return usuarioRepository.findByResetToken(token)
-                .map(Usuario::getNombre)
-                .orElseThrow(() -> new ResourceNotFoundException("Token inválido o expirado"));
+        return getUsuarioByValidResetToken(token).getNombre();
     }
 
     @Override
     public void resetPassword(String token, String newPassword) {
-        Usuario usuario = usuarioRepository.findByResetToken(token)
-                .orElseThrow(() -> new ResourceNotFoundException("Token inválido o expirado"));
-        if (usuario.getResetTokenExpiry() == null
-                || usuario.getResetTokenExpiry().isBefore(java.time.LocalDateTime.now())) {
-            throw new IllegalArgumentException("El enlace ha expirado. Solicita un nuevo acceso al administrador.");
-        }
+        Usuario usuario = getUsuarioByValidResetToken(token);
         usuario.setPassword(passwordEncoder.encode(newPassword));
         usuario.setResetToken(null);
         usuario.setResetTokenExpiry(null);
@@ -102,6 +96,7 @@ public class AuthServiceImpl implements AuthService {
         usuario.setEmail(request.email());
         usuario.setRol(request.rol());
         usuario.setActivo(true);
+        usuario.setMustChangePassword(true);
         return buildResponse(usuarioRepository.save(usuario));
     }
 
@@ -118,9 +113,6 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private List<String> getPermisos(Usuario usuario) {
-        if (usuario.getRol() == com.medicamentos.domain.enums.RolUsuario.ADMIN) {
-            return List.of("*");
-        }
         return roleRepository.findByName("ROLE_" + usuario.getRol().name())
                 .map(role -> {
                     List<String> result = new java.util.ArrayList<>();
@@ -134,5 +126,18 @@ public class AuthServiceImpl implements AuthService {
                     return result;
                 })
                 .orElse(List.of());
+    }
+
+    private Usuario getUsuarioByValidResetToken(String token) {
+        Usuario usuario = usuarioRepository.findByResetToken(token)
+                .orElseThrow(() -> new ResourceNotFoundException("Token inválido o expirado"));
+        if (usuario.getResetTokenExpiry() == null
+                || usuario.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException("El enlace ha expirado. Solicita un nuevo acceso al administrador.");
+        }
+        if (!Boolean.TRUE.equals(usuario.getActivo())) {
+            throw new IllegalArgumentException("El usuario está inactivo");
+        }
+        return usuario;
     }
 }

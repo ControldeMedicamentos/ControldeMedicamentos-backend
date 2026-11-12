@@ -13,7 +13,9 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "audit_logs", indexes = {
         @Index(name = "idx_audit_logs_timestamp", columnList = "timestamp"),
-        @Index(name = "idx_audit_logs_user_email", columnList = "user_email")
+        @Index(name = "idx_audit_logs_user_email", columnList = "user_email"),
+        @Index(name = "idx_audit_logs_ip_address", columnList = "ip_address"),
+        @Index(name = "idx_audit_logs_resultado", columnList = "resultado")
 })
 public class AuditLog {
 
@@ -38,4 +40,25 @@ public class AuditLog {
 
     @Column(columnDefinition = "TEXT")
     private String detalle;
+
+    @Column(name = "ip_address", length = 64)
+    private String ipAddress;
+
+    @Column(name = "request_method", length = 10)
+    private String requestMethod;
+
+    @Column(name = "request_path", length = 300)
+    private String requestPath;
+
+    @Column(length = 20)
+    private String resultado;
+
+    @Column(name = "entidad_tipo", length = 60)
+    private String entidadTipo;
+
+    @Column(name = "entidad_id", length = 80)
+    private String entidadId;
+
+    @Column(name = "user_agent", length = 500)
+    private String userAgent;
 }

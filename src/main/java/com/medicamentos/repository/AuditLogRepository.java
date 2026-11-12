@@ -17,6 +17,8 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
             WHERE (CAST(:accion AS TEXT) IS NULL OR accion = :accion)
             AND (CAST(:modulo AS TEXT) IS NULL OR modulo = :modulo)
             AND (CAST(:email AS TEXT) IS NULL OR user_email ILIKE CONCAT('%', :email, '%'))
+            AND (CAST(:ipAddress AS TEXT) IS NULL OR ip_address ILIKE CONCAT('%', :ipAddress, '%'))
+            AND (CAST(:resultado AS TEXT) IS NULL OR COALESCE(resultado, 'EXITOSO') = :resultado)
             AND (CAST(:desde AS TIMESTAMP) IS NULL OR timestamp >= CAST(:desde AS TIMESTAMP))
             AND (CAST(:hasta AS TIMESTAMP) IS NULL OR timestamp <= CAST(:hasta AS TIMESTAMP))
             ORDER BY timestamp DESC
@@ -26,6 +28,8 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
             WHERE (CAST(:accion AS TEXT) IS NULL OR accion = :accion)
             AND (CAST(:modulo AS TEXT) IS NULL OR modulo = :modulo)
             AND (CAST(:email AS TEXT) IS NULL OR user_email ILIKE CONCAT('%', :email, '%'))
+            AND (CAST(:ipAddress AS TEXT) IS NULL OR ip_address ILIKE CONCAT('%', :ipAddress, '%'))
+            AND (CAST(:resultado AS TEXT) IS NULL OR COALESCE(resultado, 'EXITOSO') = :resultado)
             AND (CAST(:desde AS TIMESTAMP) IS NULL OR timestamp >= CAST(:desde AS TIMESTAMP))
             AND (CAST(:hasta AS TIMESTAMP) IS NULL OR timestamp <= CAST(:hasta AS TIMESTAMP))
             """,
@@ -34,6 +38,8 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
             @Param("accion") String accion,
             @Param("modulo") String modulo,
             @Param("email") String email,
+            @Param("ipAddress") String ipAddress,
+            @Param("resultado") String resultado,
             @Param("desde") LocalDateTime desde,
             @Param("hasta") LocalDateTime hasta,
             Pageable pageable

@@ -44,7 +44,7 @@ public class EmpleadoController {
     public EmpleadoDTO create(@Valid @RequestBody EmpleadoCreateDTO dto) {
         EmpleadoDTO result = empleadoService.create(dto);
         auditLogService.log("CREAR_EMPLEADO", "Empleados",
-                "Empleado creado: " + result.nombre() + " (" + result.email() + ") — Rol: " + result.rol());
+                "Empleado creado — Rol: " + result.rol(), "EMPLEADO", result.id().toString());
         return result;
     }
 
@@ -52,7 +52,7 @@ public class EmpleadoController {
     public EmpleadoDTO update(@PathVariable Long id, @Valid @RequestBody EmpleadoUpdateDTO dto) {
         EmpleadoDTO result = empleadoService.update(id, dto);
         auditLogService.log("ACTUALIZAR_EMPLEADO", "Empleados",
-                "Empleado actualizado: " + result.nombre() + " (" + result.email() + ")");
+                "Empleado actualizado", "EMPLEADO", result.id().toString());
         return result;
     }
 
@@ -61,7 +61,8 @@ public class EmpleadoController {
         EmpleadoDTO result = empleadoService.toggleEstado(id);
         String accion = result.activo() ? "ACTIVAR_EMPLEADO" : "DESACTIVAR_EMPLEADO";
         auditLogService.log(accion, "Empleados",
-                "Estado cambiado: " + result.nombre() + " → " + (result.activo() ? "Activo" : "Inactivo"));
+                "Estado cambiado a " + (result.activo() ? "Activo" : "Inactivo"),
+                "EMPLEADO", result.id().toString());
         return result;
     }
 }
