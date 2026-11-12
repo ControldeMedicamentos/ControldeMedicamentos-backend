@@ -5,6 +5,7 @@ import com.medicamentos.domain.model.ConsumoMedicamento;
 import com.medicamentos.domain.model.MovimientoInventario;
 import com.medicamentos.domain.model.Paciente;
 import com.medicamentos.dto.request.AtencionCreateDTO;
+import com.medicamentos.dto.request.AtencionUpdateDTO;
 import com.medicamentos.dto.request.ConsumoMedicamentoDTO;
 import com.medicamentos.dto.response.AtencionDTO;
 import com.medicamentos.exception.DuplicateResourceException;
@@ -26,6 +27,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class AtencionServiceImpl implements AtencionService {
 
     private final AtencionRepository atencionRepository;
@@ -74,6 +76,38 @@ public class AtencionServiceImpl implements AtencionService {
         Atencion savedAtencion = atencionRepository.save(atencion);
         List<ConsumoMedicamento> consumos = saveConsumos(request.consumos(), savedAtencion);
         return atencionMapper.toDTO(savedAtencion, consumos);
+    }
+
+    @Override
+    @Transactional
+    public AtencionDTO updateClinical(Long id, AtencionUpdateDTO request) {
+        Atencion atencion = atencionRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Atención no encontrada: " + id));
+        if (!atencion.getUpdatedAt().equals(request.updatedAt())) {
+            throw new DuplicateResourceException("La atención cambió desde que se abrió. Recargue la página antes de editar.");
+        }
+
+        atencion.setMotivo(request.motivo().trim());
+        atencion.setAntecedentes(request.antecedentes());
+        atencion.setInmunizaciones(request.inmunizaciones());
+        atencion.setSignosVitales(request.signosVitales());
+        atencion.setExamenFisico(request.examenFisico());
+        atencion.setLaboratorio(request.laboratorio());
+        atencion.setDiagnostico1(request.diagnostico1());
+        atencion.setCie101(request.cie101());
+        atencion.setTipoDiagnostico1(request.tipoDiagnostico1());
+        atencion.setDiagnostico2(request.diagnostico2());
+        atencion.setCie102(request.cie102());
+        atencion.setTipoDiagnostico2(request.tipoDiagnostico2());
+        atencion.setDiagnostico3(request.diagnostico3());
+        atencion.setCie103(request.cie103());
+        atencion.setTipoDiagnostico3(request.tipoDiagnostico3());
+        atencion.setConclusion(request.conclusion());
+        atencion.setDerivacion(request.derivacion());
+        atencion.setObservaciones(request.observaciones());
+
+        Atencion saved = atencionRepository.saveAndFlush(atencion);
+        return toDTO(saved);
     }
 
     private AtencionDTO toDTO(Atencion atencion) {
