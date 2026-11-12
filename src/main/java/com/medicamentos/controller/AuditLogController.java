@@ -23,12 +23,14 @@ public class AuditLogController {
             @RequestParam(required = false) String accion,
             @RequestParam(required = false) String modulo,
             @RequestParam(required = false) String email,
+            @RequestParam(required = false) String ipAddress,
+            @RequestParam(required = false) String resultado,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
         var pageable = PageRequest.of(page, size, Sort.by("timestamp").descending());
-        return auditLogService.getLogs(accion, modulo, email, desde, hasta, pageable);
+        return auditLogService.getLogs(accion, modulo, email, ipAddress, resultado, desde, hasta, pageable);
     }
 }

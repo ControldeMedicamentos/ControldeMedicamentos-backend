@@ -9,5 +9,12 @@ public record AuditLogDTO(
         String userRol,
         String accion,
         String modulo,
-        String detalle
+        String detalle,
+        String ipAddress,
+        String requestMethod,
+        String requestPath,
+        String resultado,
+        String entidadTipo,
+        String entidadId,
+        String userAgent
 ) {}

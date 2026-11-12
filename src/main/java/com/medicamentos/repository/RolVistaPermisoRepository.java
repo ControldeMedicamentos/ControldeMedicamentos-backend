@@ -7,10 +7,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface RolVistaPermisoRepository extends JpaRepository<RolVistaPermiso, Integer> {
 
-    List<RolVistaPermiso> findByRolId(Integer rolId);
+    @Query("SELECT p FROM RolVistaPermiso p JOIN FETCH p.vista WHERE p.rol.id = :rolId")
+    List<RolVistaPermiso> findByRolId(@Param("rolId") Integer rolId);
+
+    Optional<RolVistaPermiso> findByRolIdAndVistaId(Integer rolId, Integer vistaId);
 
     @Modifying
     @Query("DELETE FROM RolVistaPermiso r WHERE r.rol.id = :rolId")
