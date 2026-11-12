@@ -2,6 +2,7 @@ package com.medicamentos.mapper;
 
 import com.medicamentos.domain.model.MovimientoInventario;
 import com.medicamentos.dto.response.MovimientoInventarioDTO;
+import com.medicamentos.dto.response.MovimientoLoteDTO;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -19,7 +20,16 @@ public class MovimientoInventarioMapper {
                 movimiento.getPeriodo(),
                 movimiento.getObservacion(),
                 movimiento.getUsuarioRegistro(),
-                movimiento.getCreatedAt()
+                movimiento.getCreatedAt(),
+                movimiento.getLotes().stream()
+                        .map(detalle -> new MovimientoLoteDTO(
+                                detalle.getInventario().getId(),
+                                detalle.getInventario().getLote(),
+                                detalle.getInventario().getFechaVencimiento(),
+                                detalle.getCantidad(),
+                                detalle.getStockAntes(),
+                                detalle.getStockDespues()))
+                        .toList()
         );
     }
 }

@@ -19,7 +19,7 @@ public interface InventarioService {
 
     List<InventarioDTO> findVencidosPendientes();
 
-    InventarioDTO create(InventarioCreateDTO request);
+    InventarioDTO create(InventarioCreateDTO request, String usuarioRegistro);
 
     InventarioDTO update(Long id, InventarioCreateDTO request);
 
