@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -24,21 +25,30 @@ public class AuthController {
 
     @PostMapping("/login")
     public AuthResponseDTO login(@Valid @RequestBody LoginRequestDTO request) {
-        AuthResponseDTO response = authService.login(request);
-        auditLogService.logLogin(request.username(), response.rol().name(), true);
-        return response;
+        try {
+            AuthResponseDTO response = authService.login(request);
+            auditLogService.logLogin(request.username(), response.rol().name(), true);
+            return response;
+        } catch (AuthenticationException exception) {
+            auditLogService.logLogin(request.username(), "DESCONOCIDO", false);
+            throw exception;
+        }
     }
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
     public AuthResponseDTO register(@Valid @RequestBody RegisterRequestDTO request) {
-        return authService.register(request);
+        AuthResponseDTO response = authService.register(request);
+        auditLogService.log("REGISTRAR_USUARIO", "Seguridad", "Usuario registrado",
+                "USUARIO", response.username());
+        return response;
     }
 
     @PatchMapping("/change-password")
     public AuthResponseDTO changePassword(@Valid @RequestBody ChangePasswordDTO dto, Authentication auth) {
         AuthResponseDTO response = authService.changePassword(auth.getName(), dto);
-        auditLogService.log("CAMBIO_CONTRASENA", "Seguridad", "Cambio de contraseña exitoso");
+        auditLogService.log("CAMBIO_CONTRASENA", "Seguridad", "Cambio de contraseña exitoso",
+                "USUARIO", auth.getName());
         return response;
     }
 
@@ -57,6 +67,8 @@ public class AuthController {
     @PostMapping("/reset-password")
     public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordDTO dto) {
         authService.resetPassword(dto.token(), dto.newPassword());
+        auditLogService.logRequestEvent("RESTABLECER_CONTRASENA", "Seguridad",
+                "Contraseña restablecida mediante token válido", "EXITOSO");
         return ResponseEntity.ok().build();
     }
 }

@@ -47,12 +47,18 @@ public class DashboardServiceImpl implements DashboardService {
         LocalDate en30Dias = hoy.plusDays(30);
         LocalDate hace13Dias = hoy.minusDays(13);
 
-        long totalPacientes = pacienteRepository.countByActivoTrue();
-        long totalMedicamentos = medicamentoRepository.countByActivoTrue();
-        long atencionesMes = atencionRepository.countByFechaEvaluacionBetween(primerDiaMes, hoy);
+        boolean leerPacientes = canRead("VISTA_PACIENTES");
+        boolean leerAtenciones = canRead("VISTA_ATENCIONES");
+        boolean leerMedicamentos = canRead("VISTA_MEDICAMENTOS");
+        boolean leerInventario = canRead("VISTA_INVENTARIO");
 
-        List<Inventario> todos = inventarioRepository.findAll();
+        long totalPacientes = leerPacientes ? pacienteRepository.countByActivoTrue() : 0;
+        long totalMedicamentos = leerMedicamentos ? medicamentoRepository.countByActivoTrue() : 0;
+        long atencionesMes = leerAtenciones
+                ? atencionRepository.countByFechaEvaluacionBetween(primerDiaMes, hoy) : 0;
 
+        // El servidor no consulta ni devuelve módulos que el usuario no puede leer.
+        List<Inventario> todos = leerInventario ? inventarioRepository.findAll() : List.of();
         long bajosStock = todos.stream()
                 .filter(i -> i.getStockActual() <= i.getStockMinimo())
                 .count();
@@ -68,28 +74,30 @@ public class DashboardServiceImpl implements DashboardService {
                 .limit(20)
                 .toList();
 
-        List<AtencionResumenDTO> recientes = atencionRepository
-                .findTop5ByOrderByFechaEvaluacionDescIdDesc()
-                .stream()
-                .map(this::toResumen)
-                .toList();
+        List<AtencionResumenDTO> recientes = leerAtenciones && leerPacientes
+                ? atencionRepository.findTop5ByOrderByFechaEvaluacionDescIdDesc()
+                    .stream().map(this::toResumen).toList()
+                : List.of();
 
-        Map<LocalDate, Long> porDiaMap = atencionRepository.countGroupedByDay(hace13Dias, hoy)
-                .stream()
-                .collect(Collectors.toMap(
-                        row -> (LocalDate) row[0],
-                        row -> (Long) row[1]
-                ));
+        Map<LocalDate, Long> porDiaMap = leerAtenciones
+                ? atencionRepository.countGroupedByDay(hace13Dias, hoy).stream()
+                    .collect(Collectors.toMap(
+                            row -> (LocalDate) row[0],
+                            row -> (Long) row[1]))
+                : Map.of();
 
-        List<AtencionesPorDiaDTO> atencionesPorDia = hace13Dias.datesUntil(hoy.plusDays(1))
-                .map(d -> new AtencionesPorDiaDTO(d.toString(), porDiaMap.getOrDefault(d, 0L)))
-                .toList();
+        List<AtencionesPorDiaDTO> atencionesPorDia = leerAtenciones
+                ? hace13Dias.datesUntil(hoy.plusDays(1))
+                    .map(d -> new AtencionesPorDiaDTO(d.toString(), porDiaMap.getOrDefault(d, 0L)))
+                    .toList()
+                : List.of();
 
-        List<TopConsumoDTO> topConsumos = consumoRepository.findTopConsumosRaw(primerDiaMes, hoy)
-                .stream()
-                .limit(5)
-                .map(row -> new TopConsumoDTO((String) row[0], ((Number) row[1]).longValue()))
-                .toList();
+        List<TopConsumoDTO> topConsumos = leerAtenciones && leerMedicamentos
+                ? consumoRepository.findTopConsumosRaw(primerDiaMes, hoy).stream()
+                    .limit(5)
+                    .map(row -> new TopConsumoDTO((String) row[0], ((Number) row[1]).longValue()))
+                    .toList()
+                : List.of();
 
         List<AuditLogDTO> actividadReciente = isAdmin() ? auditLogService.getRecent(8) : List.of();
 
@@ -123,5 +131,11 @@ public class DashboardServiceImpl implements DashboardService {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         return auth != null && auth.getAuthorities().stream()
                 .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+    }
+
+    private boolean canRead(String vista) {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> (vista + ":LEER").equals(a.getAuthority()));
     }
 }

@@ -1,6 +1,7 @@
 package com.medicamentos.service;
 
 import com.medicamentos.dto.request.AtencionCreateDTO;
+import com.medicamentos.dto.request.AtencionUpdateDTO;
 import com.medicamentos.dto.response.AtencionDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,4 +22,6 @@ public interface AtencionService {
     AtencionDTO findById(Long id);
 
     AtencionDTO create(AtencionCreateDTO request);
+
+    AtencionDTO updateClinical(Long id, AtencionUpdateDTO request);
 }

@@ -2,6 +2,7 @@ package com.medicamentos.controller;
 
 import com.medicamentos.domain.model.AtencionArchivo;
 import com.medicamentos.dto.request.AtencionCreateDTO;
+import com.medicamentos.dto.request.AtencionUpdateDTO;
 import com.medicamentos.dto.response.AtencionArchivoDTO;
 import com.medicamentos.dto.response.AtencionDTO;
 import com.medicamentos.exception.ResourceNotFoundException;
@@ -23,6 +24,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -43,32 +45,39 @@ public class AtencionController {
     private final AuditLogService auditLogService;
 
     @GetMapping
+    @PreAuthorize("hasAuthority('VISTA_ATENCIONES:LEER')")
     public List<AtencionDTO> findAll() {
         return atencionService.findAll();
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('VISTA_ATENCIONES:LEER')")
     public AtencionDTO findById(@PathVariable Long id) {
-        return atencionService.findById(id);
+        AtencionDTO result = atencionService.findById(id);
+        auditLogService.log("CONSULTAR_DETALLE_ATENCION", "Atenciones", "Consulta de historia clínica",
+                "ATENCION", id.toString());
+        return result;
     }
 
     @GetMapping("/patient/{pacienteId}")
+    @PreAuthorize("hasAuthority('VISTA_ATENCIONES:LEER')")
     public List<AtencionDTO> findByPaciente(@PathVariable Long pacienteId) {
+        List<AtencionDTO> result = atencionService.findByPaciente(pacienteId);
         auditLogService.log("CONSULTAR_ATENCIONES_PACIENTE", "Atenciones",
-                "Consulta de atenciones del paciente ID " + pacienteId);
-        return atencionService.findByPaciente(pacienteId);
+                "Consulta de historia del paciente", "PACIENTE", pacienteId.toString());
+        return result;
     }
 
     @GetMapping("/search")
+    @PreAuthorize("hasAuthority('VISTA_ATENCIONES:LEER')")
     public List<AtencionDTO> findByFecha(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
-        auditLogService.log("CONSULTAR_ATENCIONES", "Atenciones",
-                "Consulta de atenciones del " + desde + " al " + hasta);
         return atencionService.findByFecha(desde, hasta);
     }
 
     @GetMapping("/page")
+    @PreAuthorize("hasAuthority('VISTA_ATENCIONES:LEER')")
     public Page<AtencionDTO> findPageByFecha(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
@@ -77,24 +86,33 @@ public class AtencionController {
             @RequestParam(defaultValue = "10") int size) {
         var pageable = PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100),
                 Sort.by(Sort.Order.desc("fechaEvaluacion"), Sort.Order.desc("id")));
-        auditLogService.log("CONSULTAR_ATENCIONES", "Atenciones",
-                "Consulta paginada de atenciones del " + desde + " al " + hasta);
         return atencionService.findPageByFecha(desde, hasta, search, pageable);
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('VISTA_ATENCIONES:ESCRIBIR')")
     @ResponseStatus(HttpStatus.CREATED)
     public AtencionDTO create(@Valid @RequestBody AtencionCreateDTO request, Authentication authentication) {
         AtencionDTO result = atencionService.create(withAuthenticatedUser(request, authentication.getName()));
         auditLogService.log("CREAR_ATENCION", "Atenciones",
                 "Atención registrada para paciente ID " + request.pacienteId()
-                + " — Motivo: " + request.motivo()
                 + (result.consumos() != null && !result.consumos().isEmpty()
-                        ? " — " + result.consumos().size() + " medicamento(s) consumido(s)" : ""));
+                        ? " — " + result.consumos().size() + " medicamento(s) consumido(s)" : ""),
+                "ATENCION", result.id().toString());
+        return result;
+    }
+
+    @PutMapping("/{id}/clinical")
+    @PreAuthorize("hasAuthority('VISTA_ATENCIONES:MODIFICAR')")
+    public AtencionDTO updateClinical(@PathVariable Long id, @Valid @RequestBody AtencionUpdateDTO request) {
+        AtencionDTO result = atencionService.updateClinical(id, request);
+        auditLogService.log("EDITAR_ATENCION", "Atenciones", "Datos clínicos actualizados",
+                "ATENCION", id.toString());
         return result;
     }
 
     @PostMapping("/{id}/files")
+    @PreAuthorize("hasAuthority('VISTA_ATENCIONES:ESCRIBIR')")
     @ResponseStatus(HttpStatus.CREATED)
     public AtencionArchivoDTO uploadArchivo(@PathVariable Long id, @RequestParam("file") MultipartFile file) {
         var atencion = atencionRepository.findById(id)
@@ -107,16 +125,20 @@ public class AtencionController {
         archivo.setTipoContenido(file.getContentType());
         archivo.setTamanio(file.getSize());
         AtencionArchivo saved = archivoRepository.save(archivo);
+        auditLogService.log("SUBIR_ARCHIVO_ATENCION", "Atenciones",
+                "Archivo clínico subido: " + saved.getId(), "ATENCION", id.toString());
         return toArchivoDTO(saved);
     }
 
     @GetMapping("/{id}/files")
+    @PreAuthorize("hasAuthority('VISTA_ATENCIONES:LEER')")
     public List<AtencionArchivoDTO> listarArchivos(@PathVariable Long id) {
         return archivoRepository.findByAtencionIdOrderByCreatedAtAsc(id)
                 .stream().map(this::toArchivoDTO).toList();
     }
 
     @GetMapping("/files/{fileId}/download")
+    @PreAuthorize("hasAuthority('VISTA_ATENCIONES:LEER')")
     public ResponseEntity<Resource> descargarArchivo(@PathVariable Long fileId) {
         AtencionArchivo archivo = archivoRepository.findById(fileId)
                 .orElseThrow(() -> new ResourceNotFoundException("Archivo no encontrado: " + fileId));
@@ -124,6 +146,9 @@ public class AtencionController {
             Path filePath = fileStorageService.load(archivo.getNombreArchivo());
             Resource resource = new UrlResource(filePath.toUri());
             if (!resource.exists()) throw new ResourceNotFoundException("Archivo físico no encontrado");
+            auditLogService.log("DESCARGAR_ARCHIVO_ATENCION", "Atenciones",
+                    "Archivo clínico consultado: " + fileId,
+                    "ATENCION", archivo.getAtencion().getId().toString());
             String contentType = archivo.getTipoContenido() != null ? archivo.getTipoContenido() : MediaType.APPLICATION_OCTET_STREAM_VALUE;
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))

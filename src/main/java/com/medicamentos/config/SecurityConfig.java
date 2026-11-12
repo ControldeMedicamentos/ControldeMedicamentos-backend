@@ -1,6 +1,8 @@
 package com.medicamentos.config;
 
 import com.medicamentos.security.JwtAuthFilter;
+import com.medicamentos.security.AuditRequestFilter;
+import com.medicamentos.service.AuditLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpMethod;
 import org.springframework.context.annotation.Bean;
@@ -28,6 +30,7 @@ public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
     private final UserDetailsService userDetailsService;
+    private final AuditLogService auditLogService;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -44,6 +47,7 @@ public class SecurityConfig {
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(new AuditRequestFilter(auditLogService), JwtAuthFilter.class)
                 .build();
     }
 

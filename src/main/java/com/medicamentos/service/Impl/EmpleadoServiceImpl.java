@@ -1,6 +1,7 @@
 package com.medicamentos.service.Impl;
 
 import com.medicamentos.domain.model.Usuario;
+import com.medicamentos.domain.enums.RolUsuario;
 import com.medicamentos.dto.request.EmpleadoCreateDTO;
 import com.medicamentos.dto.request.EmpleadoUpdateDTO;
 import com.medicamentos.dto.response.EmpleadoDTO;
@@ -90,6 +91,11 @@ public class EmpleadoServiceImpl implements EmpleadoService {
         Usuario u = usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Empleado no encontrado: " + id));
 
+        if (Boolean.TRUE.equals(u.getActivo()) && u.getRol() == RolUsuario.ADMIN
+                && dto.rol() != RolUsuario.ADMIN) {
+            requireAnotherActiveAdmin();
+        }
+
         if (!u.getEmail().equalsIgnoreCase(dto.email()) && usuarioRepository.existsByEmail(dto.email())) {
             throw new DuplicateResourceException("El email '" + dto.email() + "' ya está registrado");
         }
@@ -108,8 +114,17 @@ public class EmpleadoServiceImpl implements EmpleadoService {
     public EmpleadoDTO toggleEstado(Long id) {
         Usuario u = usuarioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Empleado no encontrado: " + id));
+        if (Boolean.TRUE.equals(u.getActivo()) && u.getRol() == RolUsuario.ADMIN) {
+            requireAnotherActiveAdmin();
+        }
         u.setActivo(!u.getActivo());
         return toDTO(usuarioRepository.save(u));
+    }
+
+    private void requireAnotherActiveAdmin() {
+        if (usuarioRepository.countByRolAndActivoTrueAndResetTokenIsNull(RolUsuario.ADMIN) <= 1) {
+            throw new IllegalArgumentException("Debe quedar al menos un administrador activo");
+        }
     }
 
     private EmpleadoDTO toDTO(Usuario u) {

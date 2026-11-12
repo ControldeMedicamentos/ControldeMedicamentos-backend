@@ -9,12 +9,18 @@ import java.util.List;
 
 public interface AuditLogService {
 
+    String REQUEST_AUDITED_ATTRIBUTE = AuditLogService.class.getName() + ".RECORDED";
+
     void log(String accion, String modulo, String detalle);
+
+    void log(String accion, String modulo, String detalle, String entidadTipo, String entidadId);
 
     void logLogin(String email, String rol, boolean exitoso);
 
-    Page<AuditLogDTO> getLogs(String accion, String modulo, String email,
-                               LocalDate desde, LocalDate hasta, Pageable pageable);
+    void logRequestEvent(String accion, String modulo, String detalle, String resultado);
+
+    Page<AuditLogDTO> getLogs(String accion, String modulo, String email, String ipAddress, String resultado,
+                              LocalDate desde, LocalDate hasta, Pageable pageable);
 
     List<AuditLogDTO> getRecent(int limit);
 }

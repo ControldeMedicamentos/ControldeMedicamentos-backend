@@ -86,6 +86,16 @@ CREATE TABLE IF NOT EXISTS movimientos_inventario (
     created_at TIMESTAMP NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS movimientos_inventario_lotes (
+    id BIGSERIAL PRIMARY KEY,
+    movimiento_id BIGINT NOT NULL REFERENCES movimientos_inventario(id),
+    inventario_id BIGINT NOT NULL REFERENCES inventarios(id),
+    cantidad INTEGER NOT NULL CHECK (cantidad > 0),
+    stock_antes INTEGER NOT NULL CHECK (stock_antes >= 0),
+    stock_despues INTEGER NOT NULL CHECK (stock_despues >= 0),
+    CONSTRAINT uk_movimiento_inventario_lote UNIQUE (movimiento_id, inventario_id)
+);
+
 CREATE TABLE IF NOT EXISTS consumos_medicamento (
     id BIGSERIAL PRIMARY KEY,
     atencion_id BIGINT NOT NULL REFERENCES atenciones(id),
@@ -101,8 +111,33 @@ CREATE INDEX IF NOT EXISTS idx_atenciones_fecha ON atenciones(fecha_evaluacion);
 CREATE INDEX IF NOT EXISTS idx_inventarios_medicamento ON inventarios(medicamento_id);
 CREATE INDEX IF NOT EXISTS idx_movimientos_periodo ON movimientos_inventario(periodo);
 CREATE INDEX IF NOT EXISTS idx_movimientos_medicamento_periodo ON movimientos_inventario(medicamento_id, periodo);
+CREATE INDEX IF NOT EXISTS idx_movimiento_lote_movimiento ON movimientos_inventario_lotes(movimiento_id);
+CREATE INDEX IF NOT EXISTS idx_movimiento_lote_inventario ON movimientos_inventario_lotes(inventario_id);
 CREATE INDEX IF NOT EXISTS idx_consumos_atencion ON consumos_medicamento(atencion_id);
 CREATE INDEX IF NOT EXISTS idx_usuarios_username ON usuarios(username);
+
+CREATE TABLE IF NOT EXISTS conciliaciones_mensuales (
+    id BIGSERIAL PRIMARY KEY,
+    periodo VARCHAR(6) NOT NULL UNIQUE,
+    resultado VARCHAR(25) NOT NULL,
+    observacion TEXT,
+    usuario_registro VARCHAR(80) NOT NULL,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS conciliaciones_mensuales_detalle (
+    id BIGSERIAL PRIMARY KEY,
+    conciliacion_id BIGINT NOT NULL REFERENCES conciliaciones_mensuales(id) ON DELETE CASCADE,
+    medicamento_id BIGINT NOT NULL REFERENCES medicamentos(id),
+    stock_sistema INTEGER NOT NULL CHECK (stock_sistema >= 0),
+    stock_fisico INTEGER NOT NULL CHECK (stock_fisico >= 0),
+    diferencia INTEGER NOT NULL,
+    CONSTRAINT uk_conciliacion_medicamento UNIQUE (conciliacion_id, medicamento_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_conciliacion_periodo ON conciliaciones_mensuales(periodo);
+CREATE INDEX IF NOT EXISTS idx_conciliacion_detalle_medicamento ON conciliaciones_mensuales_detalle(medicamento_id);
 
 CREATE TABLE IF NOT EXISTS roles (
     id SERIAL PRIMARY KEY,
@@ -133,8 +168,13 @@ CREATE TABLE IF NOT EXISTS rol_vista_permisos (
 );
 
 INSERT INTO roles (name, descripcion, es_sistema)
-VALUES ('ROLE_ADMIN', 'Administrador del sistema con acceso total', TRUE)
-ON CONFLICT (name) DO NOTHING;
+VALUES
+    ('ROLE_ADMIN', 'Administrador del sistema con acceso total', TRUE),
+    ('ROLE_MEDICO', 'Personal médico con acceso clínico', TRUE),
+    ('ROLE_ENFERMERA', 'Personal de enfermería con acceso asistencial', TRUE)
+ON CONFLICT (name) DO UPDATE SET
+    descripcion = EXCLUDED.descripcion,
+    es_sistema = TRUE;
 
 CREATE TABLE IF NOT EXISTS audit_logs (
     id BIGSERIAL PRIMARY KEY,
@@ -143,11 +183,20 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     user_rol VARCHAR(30),
     accion VARCHAR(60) NOT NULL,
     modulo VARCHAR(50) NOT NULL,
-    detalle TEXT
+    detalle TEXT,
+    ip_address VARCHAR(64),
+    request_method VARCHAR(10),
+    request_path VARCHAR(300),
+    resultado VARCHAR(20) NOT NULL DEFAULT 'EXITOSO',
+    entidad_tipo VARCHAR(60),
+    entidad_id VARCHAR(80),
+    user_agent VARCHAR(500)
 );
 
 CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs(timestamp DESC);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_user_email ON audit_logs(user_email);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_ip_address ON audit_logs(ip_address);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_resultado ON audit_logs(resultado);
 
 INSERT INTO vistas (codigo, nombre, ruta, grupo, orden) VALUES
     ('VISTA_DASHBOARD',     'Dashboard',           '/dashboard',            'General',  1),

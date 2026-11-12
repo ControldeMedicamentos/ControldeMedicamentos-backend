@@ -41,15 +41,7 @@ public class RoleServiceImpl implements RoleService {
     @Override
     @Transactional
     public RolDTO createRole(String name, String descripcion) {
-        String normalizado = normalizarNombre(name);
-        if (roleRepository.existsByName(normalizado)) {
-            throw new IllegalArgumentException("Ya existe un rol con ese nombre");
-        }
-        Role role = new Role();
-        role.setName(normalizado);
-        role.setDescripcion(descripcion != null && !descripcion.isBlank() ? descripcion.trim() : null);
-        role.setEsSistema(false);
-        return toDTO(roleRepository.save(role));
+        throw new IllegalArgumentException("Los únicos roles permitidos son ADMIN, MEDICO y ENFERMERA");
     }
 
     @Override
@@ -111,6 +103,10 @@ public class RoleServiceImpl implements RoleService {
     public List<RolVistaPermisoDTO> saveVistasByRole(Integer roleId, List<RolVistaPermisoDTO> permisos) {
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new ResourceNotFoundException("Rol no encontrado: " + roleId));
+
+        if ("ROLE_ADMIN".equals(role.getName())) {
+            throw new IllegalArgumentException("Los permisos del administrador son obligatorios y no se pueden reducir");
+        }
 
         rolVistaPermisoRepository.deleteByRolId(roleId);
         rolVistaPermisoRepository.flush();

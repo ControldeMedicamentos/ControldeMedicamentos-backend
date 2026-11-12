@@ -24,6 +24,9 @@ public class EmailServiceImpl implements EmailService {
     @Value("${spring.mail.username:}")
     private String mailUsername;
 
+    @Value("${app.mail.log-reset-link:false}")
+    private boolean logResetLink;
+
     private boolean isMailConfigured() {
         return mailSender != null && mailUsername != null && !mailUsername.isBlank();
     }
@@ -31,7 +34,11 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void sendResetPassword(String nombre, String email, String resetLink) {
         if (!isMailConfigured()) {
-            log.warn("Email SMTP no configurado. Enlace de activación para {}: {}", email, resetLink);
+            if (logResetLink) {
+                log.warn("Correo no configurado. Enlace de activación local para {}: {}", email, resetLink);
+            } else {
+                log.warn("Correo no configurado. No se pudo enviar el enlace de activación a {}", email);
+            }
             return;
         }
         try {
